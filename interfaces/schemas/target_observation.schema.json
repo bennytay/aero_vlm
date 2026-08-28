@@ -1,0 +1,123 @@
+{
+  "additionalProperties": false,
+  "description": "Version 0 target localisation result in normalised image coordinates.",
+  "properties": {
+    "timestamp_us": {
+      "minimum": 0,
+      "title": "Timestamp Us",
+      "type": "integer"
+    },
+    "visible": {
+      "title": "Visible",
+      "type": "boolean"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "center_x_normalized": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Center X Normalized"
+    },
+    "center_y_normalized": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Center Y Normalized"
+    },
+    "bbox_xyxy_normalized": {
+      "anyOf": [
+        {
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Bbox Xyxy Normalized"
+    },
+    "target_label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target Label"
+    },
+    "target_id": {
+      "anyOf": [
+        {
+          "maximum": 255,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target Id"
+    },
+    "stale": {
+      "title": "Stale",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "timestamp_us",
+    "visible",
+    "confidence",
+    "stale"
+  ],
+  "title": "TargetObservation",
+  "type": "object"
+}

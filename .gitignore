@@ -1,0 +1,38 @@
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local tooling
+.gstack/
+
+# Datasets (keep documentation, manifests, and tiny intentional fixtures)
+data/raw/
+data/processed/
+data/downloads/
+data/samples/*
+!data/samples/.gitkeep
+
+# Model artefacts and weights
+*.ckpt
+*.onnx
+*.pt
+*.pth
+*.safetensors
+configs/models/*
+!configs/models/.gitkeep
+
+# Firmware/build trees
+build/
+dist/
+firmware/esp32_p4/build/
+firmware/esp32_p4/managed_components/
+
+# Runtime and flight logs
+logs/*
+!logs/README.md
+*.binlog
+*.tlog

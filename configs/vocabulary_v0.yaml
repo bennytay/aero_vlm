@@ -1,0 +1,22 @@
+version: v0
+labels:
+  - id: 1
+    name: red backpack
+  - id: 2
+    name: water bottle
+  - id: 3
+    name: person in high-vis
+  - id: 4
+    name: black vehicle
+  - id: 5
+    name: solar panel
+  - id: 6
+    name: wheelie bin
+  - id: 7
+    name: bicycle
+  - id: 8
+    name: cardboard box
+  - id: 9
+    name: sports ball
+  - id: 10
+    name: orange bucket

@@ -14,6 +14,7 @@ class FakeTeacher:
             predicted_label=self.predicted_label,
             confidence=0.8,
             probabilities={self.predicted_label: 0.8},
+            similarities={self.predicted_label: 0.3},
             image_embedding=(0.1, 0.2),
             latency_ms=1.5,
         )

@@ -1423,6 +1423,7 @@ At the end of day 14, the expected result is not a flying drone. It is a reprodu
 | D-004 | Test sequencing | 2026-08-28 | Add learned world modelling only after tracker/controller baseline | Separates perception, control, and prediction failures | Phase 11 baseline complete |
 | D-005 | Mechanical sequencing | 2026-08-28 | Delay CAD until bench measurements exist | Mount geometry, cooling, and mass are currently unknown | Compute hardware and PHY-003 are characterised |
 | D-006 | Specification rule | 2026-08-28 | Separate part-independent requirements from design options and require verification for every requirement | Prevents preferred components from becoming unexamined constraints | Only if this document is replaced by another engineering-specification standard |
+| D-007 | Scope decision | 2026-08-28 | Support `water bottle`, `black vehicle`, `bicycle`, `cardboard box`, and `sports ball` for Phase 2 headlines and the first mission; park the other five v0 names while retaining them in the vocabulary and parser | Phase 1 validation is badly unbalanced, thin classes cannot support claims, and Open Images does not verify colour-qualified names | New licensed, scene-separated evidence makes a parked class statistically defensible |
 
 ---
 

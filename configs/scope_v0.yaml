@@ -1,0 +1,20 @@
+version: v0
+supported:
+  - water bottle
+  - black vehicle
+  - bicycle
+  - cardboard box
+  - sports ball
+parked:
+  - red backpack
+  - person in high-vis
+  - solar panel
+  - wheelie bin
+  - orange bucket
+reject_flag: no_target
+rules:
+  - Headline Phase 2 metrics report the supported set separately.
+  - Parked names remain in vocabulary_v0.yaml and the exact-string parser.
+  - no_target is a rejection result, not a sixth supported object.
+  - Open Images colour adjectives are not verified.
+  - First mission examples use FIND bicycle or FIND water bottle.

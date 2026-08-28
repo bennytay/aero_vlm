@@ -1,0 +1,56 @@
+{
+  "seed": 20260828,
+  "train_scenes": 913,
+  "held_out_scenes": 228,
+  "threshold": 0.17,
+  "teacher": {
+    "supported_top1": 0.7870967741935484,
+    "supported_macro_recall": 0.7956322843822844,
+    "supported_per_class_recall": {
+      "water bottle": 0.6666666666666666,
+      "black vehicle": 0.9,
+      "bicycle": 0.8461538461538461,
+      "cardboard box": 0.9090909090909091,
+      "sports ball": 0.65625
+    },
+    "parked_per_class_recall": {
+      "red backpack": 1.0,
+      "person in high-vis": 1.0,
+      "solar panel": 1.0,
+      "wheelie bin": 0.6666666666666666,
+      "orange bucket": 1.0
+    },
+    "no_target_false_positive_rate": 0.23333333333333334
+  },
+  "student": {
+    "supported_top1": 0.4,
+    "supported_macro_recall": 0.35703379953379955,
+    "supported_per_class_recall": {
+      "water bottle": 0.30303030303030304,
+      "black vehicle": 0.6,
+      "bicycle": 0.5128205128205128,
+      "cardboard box": 0.18181818181818182,
+      "sports ball": 0.1875
+    },
+    "parked_per_class_recall": {
+      "red backpack": 0.25,
+      "person in high-vis": 0.0,
+      "solar panel": 0.3333333333333333,
+      "wheelie bin": 0.0,
+      "orange bucket": 0.0
+    },
+    "no_target_false_positive_rate": 1.0
+  },
+  "student_teacher_decision_agreement": 0.2894736842105263,
+  "mean_teacher_embedding_cosine": 0.49041032791137695,
+  "parameters": 478112,
+  "checkpoint_bytes": 2274059,
+  "checkpoint_sha256": "sha256:ec0d671a302958187eec60a3d40e864cc9daf573a47c195fbae4fd6829496dc1",
+  "onnx_bytes": 1930364,
+  "onnx_sha256": "sha256:63ea61add1eda0ab369f048be0bfc2f845d940f9d62f9543f4d116f797dd867e",
+  "onnx_parity_max_abs": 8.23289155960083e-07,
+  "desktop_latency_ms": {
+    "p50": 8.894854500000001,
+    "p95": 9.453420549999999
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "experiment_id": "exp_20260828_student_v0_distill",
+  "question": "Can a MobileNetV2-0.35 student copy frozen MobileCLIP2-S0 embedding rankings on supported targets while preserving reject behavior?",
+  "hypothesis": "The student will beat 10% random supported-label accuracy, show teacher-ranking transfer, and match static ONNX within 1e-5.",
+  "git_commit": "b8992247e5c84f663ab63e9233f237ba45b9d336",
+  "config_hash": "sha256:9a67fb7fbec25dc2326a8137f981b468453cf4a16035d2ad15d4e986497c05c2",
+  "dataset_manifest_hash": "sha256:a42b0cb7315412d59f21f816979c4495261d72cd8b7fcd59bd280155e5591c7d",
+  "random_seed": 20260828,
+  "hardware": "Apple desktop CPU; MPS unavailable on active macOS runtime",
+  "firmware_version": null,
+  "model_hash": "sha256:ec0d671a302958187eec60a3d40e864cc9daf573a47c195fbae4fd6829496dc1",
+  "metrics": {
+    "supported_top1": 0.4,
+    "supported_macro_recall": 0.35703379953379955,
+    "no_target_false_positive_rate": 1.0,
+    "teacher_decision_agreement": 0.2894736842105263,
+    "onnx_parity_max_abs": 8.23289155960083e-07
+  },
+  "artefact_paths": [
+    "evaluation/experiments/exp_20260828_student_v0_distill/artefacts/student_v0.pt",
+    "evaluation/experiments/exp_20260828_student_v0_distill/artefacts/student_v0.onnx",
+    "evaluation/experiments/exp_20260828_student_v0_distill/artefacts/metrics.json",
+    "evaluation/experiments/exp_20260828_student_v0_distill/artefacts/predictions.csv"
+  ],
+  "created_utc": "2026-08-28T06:48:49.732475Z"
+}

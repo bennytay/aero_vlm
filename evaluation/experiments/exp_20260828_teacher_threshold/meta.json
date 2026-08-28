@@ -1,0 +1,21 @@
+{
+  "experiment_id": "exp_20260828_teacher_threshold",
+  "question": "Can a ten-prompt cosine reject threshold reduce empty-scene false positives without collapsing supported-class recall?",
+  "hypothesis": "A Pareto threshold will reduce no_target false positives to at most 20% while retaining at least 75% supported macro recall.",
+  "git_commit": "b8992247e5c84f663ab63e9233f237ba45b9d336",
+  "config_hash": "sha256:9a67fb7fbec25dc2326a8137f981b468453cf4a16035d2ad15d4e986497c05c2",
+  "dataset_manifest_hash": "sha256:a42b0cb7315412d59f21f816979c4495261d72cd8b7fcd59bd280155e5591c7d",
+  "random_seed": 0,
+  "hardware": "Apple desktop CPU; cached MobileCLIP2-S0 image embeddings",
+  "firmware_version": null,
+  "model_hash": "sha256:ab91a8e3c339171ee243a0193a073c8f26f89a814c12f92554b20e0442905c1b",
+  "metrics": {
+    "threshold": 0.17,
+    "no_target_false_positive_rate": 0.18,
+    "supported_macro_recall": 0.8025437929552671
+  },
+  "artefact_paths": [
+    "evaluation/experiments/exp_20260828_teacher_threshold/metrics.json"
+  ],
+  "created_utc": "2026-08-28T06:24:43.357923Z"
+}

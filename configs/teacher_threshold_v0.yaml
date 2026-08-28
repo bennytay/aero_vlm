@@ -1,0 +1,11 @@
+version: v0
+prompt_template: "a photo of a {label}"
+decision_rule: argmax ten target cosine similarities then reject below threshold
+similarity_threshold: 0.17
+validation:
+  no_target_false_positive_rate: 0.18
+  no_target_tnr: 0.82
+  supported_macro_recall: 0.8025437929552671
+  rejected_target_images: 126
+  target_images: 841
+  no_target_images: 300

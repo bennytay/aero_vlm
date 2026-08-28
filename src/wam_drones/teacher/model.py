@@ -5,9 +5,10 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from time import monotonic_ns, perf_counter_ns
-from typing import Any, Protocol, cast
+from typing import Any, Literal, Protocol, cast
 
 from wam_drones.contracts import TargetObservation
+from wam_drones.threshold import DEFAULT_SIMILARITY_THRESHOLD, apply_reject_threshold
 from wam_drones.vocabulary import TARGET_IDS_BY_LABEL
 
 MODEL_NAME = "MobileCLIP2-S0"
@@ -30,6 +31,7 @@ class TeacherResult:
     predicted_label: str
     confidence: float
     probabilities: Mapping[str, float]
+    similarities: Mapping[str, float]
     image_embedding: tuple[float, ...]
     latency_ms: float
 
@@ -45,7 +47,13 @@ class TeacherBackend(Protocol):
 class MobileClipTeacher:
     """Frozen MobileCLIP2-S0 model used only under inference mode."""
 
-    def __init__(self, device: str = "auto") -> None:
+    def __init__(
+        self,
+        device: str = "auto",
+        *,
+        decision_mode: Literal["threshold", "eleven_way"] = "threshold",
+        threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+    ) -> None:
         try:
             self._torch = importlib.import_module("torch")
             self._open_clip = importlib.import_module("open_clip")
@@ -55,18 +63,18 @@ class MobileClipTeacher:
                 "teacher dependencies are optional; run `uv sync --extra training`"
             ) from error
         self.device = self._resolve_device(device)
-        self._model, _, self._preprocess = (
-            self._open_clip.create_model_and_transforms(
-                MODEL_NAME,
-                pretrained=PRETRAINED,
-                device=self.device,
-            )
+        self.decision_mode = decision_mode
+        self.threshold = threshold
+        self._model, _, self._preprocess = self._open_clip.create_model_and_transforms(
+            MODEL_NAME,
+            pretrained=PRETRAINED,
+            device=self.device,
         )
         self._model.eval()
         for parameter in self._model.parameters():
             parameter.requires_grad_(False)
         self._tokenizer = self._open_clip.get_tokenizer(MODEL_NAME)
-        self._text_features: dict[str, Any] = {}
+        self._text_features: dict[tuple[str, bool], Any] = {}
 
     def _resolve_device(self, requested: str) -> str:
         if requested != "auto":
@@ -83,26 +91,47 @@ class MobileClipTeacher:
         elif self.device == "mps":
             self._torch.mps.synchronize()
 
-    def _prompts(self, template_name: str) -> tuple[str, ...]:
+    def _prompts(
+        self, template_name: str, *, include_no_target: bool
+    ) -> tuple[str, ...]:
         try:
             template = PROMPT_TEMPLATES[template_name]
             no_target_prompt = NO_TARGET_PROMPTS[template_name]
         except KeyError as error:
             raise ValueError(f"unknown prompt template: {template_name}") from error
         prompts = tuple(template.format(label=label) for label in TARGET_IDS_BY_LABEL)
-        return (*prompts, no_target_prompt)
+        return (*prompts, no_target_prompt) if include_no_target else prompts
 
-    def _encoded_text(self, template_name: str) -> Any:
-        if template_name not in self._text_features:
-            tokens = self._tokenizer(self._prompts(template_name)).to(self.device)
+    def _encoded_text(self, template_name: str, *, include_no_target: bool) -> Any:
+        cache_key = (template_name, include_no_target)
+        if cache_key not in self._text_features:
+            tokens = self._tokenizer(
+                self._prompts(template_name, include_no_target=include_no_target)
+            ).to(self.device)
             with self._torch.inference_mode():
                 features = self._model.encode_text(tokens)
                 features /= features.norm(dim=-1, keepdim=True)
-            self._text_features[template_name] = features
-        return self._text_features[template_name]
+            self._text_features[cache_key] = features
+        return self._text_features[cache_key]
+
+    def text_embeddings(
+        self, template_name: str, *, include_no_target: bool
+    ) -> dict[str, tuple[float, ...]]:
+        """Return normalised frozen text embeddings for cached-image analysis."""
+        features = self._encoded_text(
+            template_name, include_no_target=include_no_target
+        )
+        labels = tuple(TARGET_IDS_BY_LABEL)
+        if include_no_target:
+            labels = (*labels, NO_TARGET)
+        rows = cast(list[list[float]], features.detach().cpu().tolist())
+        return {label: tuple(row) for label, row in zip(labels, rows, strict=True)}
 
     def classify(self, image_path: Path, template_name: str) -> TeacherResult:
-        text_features = self._encoded_text(template_name)
+        include_no_target = self.decision_mode == "eleven_way"
+        text_features = self._encoded_text(
+            template_name, include_no_target=include_no_target
+        )
         image = self._image_module.open(image_path).convert("RGB")
         image_tensor = self._preprocess(image).unsqueeze(0).to(self.device)
         self._synchronise()
@@ -113,15 +142,29 @@ class MobileClipTeacher:
             probabilities = (100.0 * image_features @ text_features.T).softmax(dim=-1)
         self._synchronise()
         latency_ms = (perf_counter_ns() - started) / 1_000_000
-        labels = (*TARGET_IDS_BY_LABEL, NO_TARGET)
-        values = cast(list[float], probabilities[0].detach().cpu().tolist())
-        by_label = dict(zip(labels, values, strict=True))
-        predicted_label = max(by_label, key=by_label.__getitem__)
+        labels = tuple(TARGET_IDS_BY_LABEL)
+        if include_no_target:
+            labels = (*labels, NO_TARGET)
+        probability_values = cast(list[float], probabilities[0].detach().cpu().tolist())
+        similarity_values = cast(
+            list[float],
+            (image_features @ text_features.T)[0].detach().cpu().tolist(),
+        )
+        by_label = dict(zip(labels, probability_values, strict=True))
+        similarities = dict(zip(labels, similarity_values, strict=True))
+        if self.decision_mode == "threshold":
+            decision = apply_reject_threshold(similarities, self.threshold)
+            predicted_label = decision.predicted_label or NO_TARGET
+            confidence = min(1.0, max(0.0, decision.best_score))
+        else:
+            predicted_label = max(similarities, key=similarities.__getitem__)
+            confidence = min(1.0, max(0.0, similarities[predicted_label]))
         embedding = cast(list[float], image_features[0].detach().cpu().tolist())
         return TeacherResult(
             predicted_label=predicted_label,
-            confidence=by_label[predicted_label],
+            confidence=confidence,
             probabilities=by_label,
+            similarities=similarities,
             image_embedding=tuple(embedding),
             latency_ms=latency_ms,
         )

@@ -208,7 +208,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     repo_root = Path.cwd()
     manifest = DatasetManifest.read(args.manifest)
-    backend = MobileClipTeacher(device=args.device)
+    backend = MobileClipTeacher(device=args.device, decision_mode="eleven_way")
     metrics = evaluate(repo_root, manifest, args.output_dir, backend)
     print(json.dumps(metrics, indent=2))
     return 0

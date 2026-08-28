@@ -16,6 +16,9 @@ data/downloads/
 data/samples/*
 !data/samples/.gitkeep
 
+# Generated teacher artefacts (metadata and reports remain versioned)
+evaluation/experiments/*/artefacts/
+
 # Model artefacts and weights
 *.ckpt
 *.onnx

@@ -1,0 +1,80 @@
+version: v0
+notes:
+  - Open Images annotations do not verify the colour adjectives red, black, or orange.
+  - Open Images image licences are retained per sample from the official image metadata.
+  - Solar panel and bucket are image-level Open Images labels and have no Phase 1 box.
+  - no_target means no mapped class is present in the available positive annotations; it is not label 11.
+sources:
+  - target_label: red backpack
+    provider: Open Images V7
+    source_classes: [Backpack]
+    url: https://storage.googleapis.com/openimages/web/download_v7.html
+    licence: Per-image Creative Commons licence in Open Images metadata, commonly CC BY 2.0
+    licence_url: https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv
+    caveat: Backpack annotations do not verify red.
+  - target_label: water bottle
+    provider: Open Images V7
+    source_classes: [Bottle]
+    url: https://storage.googleapis.com/openimages/web/download_v7.html
+    licence: Per-image Creative Commons licence in Open Images metadata, commonly CC BY 2.0
+    licence_url: https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv
+    caveat: Bottle is broader than water bottle; retained as a noisy teacher baseline.
+  - target_label: person in high-vis
+    provider: Construction Site Safety Dataset
+    source_classes: [safety vest, person]
+    url: https://huggingface.co/datasets/keremberke/construction-safety-object-detection
+    licence: CC BY 4.0
+    licence_url: https://huggingface.co/datasets/keremberke/construction-safety-object-detection/raw/main/README.md
+    caveat: The official validation split is small; keep and report the actual count.
+  - target_label: black vehicle
+    provider: Open Images V7
+    source_classes: [Car, Truck, Van]
+    url: https://storage.googleapis.com/openimages/web/download_v7.html
+    licence: Per-image Creative Commons licence in Open Images metadata, commonly CC BY 2.0
+    licence_url: https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv
+    caveat: Vehicle annotations do not verify black.
+  - target_label: solar panel
+    provider: Open Images V7
+    source_classes: [Solar panel]
+    url: https://storage.googleapis.com/openimages/web/download_v7.html
+    licence: Per-image Creative Commons licence in Open Images metadata, commonly CC BY 2.0
+    licence_url: https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv
+    caveat: Image-level label only; expected to be thin in validation.
+  - target_label: wheelie bin
+    provider: Open Images V7
+    source_classes: [Waste container]
+    url: https://storage.googleapis.com/openimages/web/download_v7.html
+    licence: Per-image Creative Commons licence in Open Images metadata, commonly CC BY 2.0
+    licence_url: https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv
+    caveat: Waste container is broader than wheelie bin.
+  - target_label: bicycle
+    provider: Open Images V7
+    source_classes: [Bicycle]
+    url: https://storage.googleapis.com/openimages/web/download_v7.html
+    licence: Per-image Creative Commons licence in Open Images metadata, commonly CC BY 2.0
+    licence_url: https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv
+  - target_label: cardboard box
+    provider: Open Images V7
+    source_classes: [Box]
+    url: https://storage.googleapis.com/openimages/web/download_v7.html
+    licence: Per-image Creative Commons licence in Open Images metadata, commonly CC BY 2.0
+    licence_url: https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv
+    caveat: Box annotations do not verify cardboard.
+  - target_label: sports ball
+    provider: Open Images V7
+    source_classes: [Ball]
+    url: https://storage.googleapis.com/openimages/web/download_v7.html
+    licence: Per-image Creative Commons licence in Open Images metadata, commonly CC BY 2.0
+    licence_url: https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv
+  - target_label: orange bucket
+    provider: Open Images V7
+    source_classes: [Bucket]
+    url: https://storage.googleapis.com/openimages/web/download_v7.html
+    licence: Per-image Creative Commons licence in Open Images metadata, commonly CC BY 2.0
+    licence_url: https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv
+    caveat: Image-level label only and colour is unverified; expected to be thin.
+no_target:
+  provider: Open Images V7
+  url: https://storage.googleapis.com/openimages/web/download_v7.html
+  licence: Per-image Creative Commons licence retained in each sample
+  selection: Validation images with boxes, excluding every positive mapped source class.

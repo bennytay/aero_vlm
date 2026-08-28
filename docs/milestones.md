@@ -28,3 +28,12 @@ These GitHub-style milestones mirror the implementation plan in
 - [x] Experiment metadata record and report template
 - [x] Bench inventory template
 - [x] Canonical specification linked from README
+
+## Phase 1 / M1 teacher-baseline checklist
+
+- [x] Licensed public source map covers all ten frozen labels
+- [x] Scene-separated validation manifest with per-image hashes and licences
+- [x] Frozen MobileCLIP2-S0 evaluation for photo and aerial prompts
+- [x] Top-1, top-3, confusion, no-target false positives, latency, and counts
+- [x] Class-by-class failures and thin-class caveats recorded
+- [x] Shared `TargetObservation` contract preserved by `run_target`

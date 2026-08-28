@@ -1,0 +1,33 @@
+{
+  "experiment_id": "exp_20260828_teacher_v0_prompts",
+  "question": "Does frozen MobileCLIP2-S0 beat chance on the held-out v0 validation set, and which prompt template works better?",
+  "hypothesis": "Both frozen prompt templates will exceed the 1-in-11 chance baseline without fine-tuning.",
+  "git_commit": "e4a3073e07fbc2ea5fa773e9463aa451062706a6",
+  "config_hash": "sha256:b40558d960981863f777195e018e62557f4861f0e135fe3ea555c44689d10e17",
+  "dataset_manifest_hash": "sha256:a42b737ae10557d906af9d161df6e273ee8d315e9511f7034bb8bbdeac35947d",
+  "random_seed": 0,
+  "hardware": "MacBook Air, Apple M2, 16 GB RAM, MPS",
+  "firmware_version": null,
+  "model_hash": "sha256:ab91a1a0c4330d6b1913e24d5035dfdea15423316aaec649610c6b1c6ddd0e95",
+  "metrics": {
+    "n_val": 1141,
+    "chance_top1": 0.09090909090909091,
+    "photo_top1": 0.7598597721297108,
+    "photo_top3": 0.9596844872918493,
+    "photo_no_target_false_positive_rate": 0.48,
+    "photo_latency_ms_p50": 14.948,
+    "photo_latency_ms_p95": 19.019208,
+    "aerial_top1": 0.7388255915863278,
+    "aerial_top3": 0.9281332164767747,
+    "aerial_no_target_false_positive_rate": 0.6766666666666666,
+    "aerial_latency_ms_p50": 14.592542,
+    "aerial_latency_ms_p95": 18.027208
+  },
+  "artefact_paths": [
+    "evaluation/experiments/exp_20260828_teacher_v0_prompts/artefacts/metrics.json",
+    "evaluation/experiments/exp_20260828_teacher_v0_prompts/artefacts/predictions.csv",
+    "evaluation/experiments/exp_20260828_teacher_v0_prompts/artefacts/embeddings.jsonl.gz",
+    "evaluation/experiments/exp_20260828_teacher_v0_prompts/artefacts/error_gallery.md"
+  ],
+  "created_utc": "2026-08-28T05:42:41.264846Z"
+}

@@ -3,6 +3,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from wam_drones.contracts import CommandState, TargetObservation
+from wam_drones.dataset import DatasetManifest
 from wam_drones.parser import parse_command
 
 
@@ -27,6 +28,7 @@ def test_checked_in_schemas_match_models() -> None:
     schema_dir = Path(__file__).parents[1] / "interfaces" / "schemas"
     expected = {
         "command_state.schema.json": CommandState.model_json_schema(),
+        "dataset_manifest.schema.json": DatasetManifest.model_json_schema(),
         "target_observation.schema.json": TargetObservation.model_json_schema(),
     }
     for filename, schema in expected.items():

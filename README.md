@@ -23,6 +23,34 @@ uv run mypy src tests
 ```
 
 No GPU, NVIDIA software, dataset, or model weights are required for Phase 0.
+The default `uv sync` remains light after Phase 1.
+
+## Phase 1 frozen teacher baseline
+
+Phase 1 assembles official validation subsets into a hashed manifest and runs
+frozen MobileCLIP2-S0 zero-shot inference. Raw images, checkpoint weights, and
+large generated artefacts remain ignored.
+
+```shell
+uv run python -m wam_drones.assemble_v0
+uv sync --extra training
+uv run python -m wam_drones.teacher.evaluate
+uv run python -m wam_drones.teacher.run_target path/to/images \
+  --vocabulary configs/vocabulary_v0.yaml
+```
+
+The source/licence map is at
+[`data/manifests/sources_v0.yaml`](data/manifests/sources_v0.yaml), the validated
+scene manifest is at
+[`data/manifests/dataset_v0.json`](data/manifests/dataset_v0.json), and the full
+result is in
+[`evaluation/experiments/exp_20260828_teacher_v0_prompts/report.md`](evaluation/experiments/exp_20260828_teacher_v0_prompts/report.md).
+
+On 1,141 held-out validation scenes, the photo prompt reached 75.99% top-1 and
+95.97% top-3 against a 9.09% chance baseline. The aerial prompt reached 73.88%
+top-1 and 92.81% top-3. No-target rejection remains weak, and six classes have
+small or noisy validation sets; see the experiment report before reusing the
+headline metrics.
 
 ## Commands and contracts
 
@@ -51,8 +79,8 @@ uv run python -m wam_drones.experiments.init exp_YYYYMMDD_short_name
 ```
 
 The helper writes `evaluation/experiments/<experiment_id>/meta.json` and a
-report stub. The current experiment is
-`exp_20260828_phase0_controls`.
+report stub. The current experiment is `exp_20260828_teacher_v0_prompts`.
 
-Phase 0 stops at reproducible engineering controls. The next phase is Phase 1,
-the desktop teacher baseline—not hardware bring-up.
+The next step is Phase 2 compact-student distillation only because most classes
+beat chance. Phase 2 is not implemented here, and hardware bring-up remains out
+of scope.

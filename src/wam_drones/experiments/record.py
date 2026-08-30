@@ -7,11 +7,13 @@ from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 EXPERIMENT_ID_PATTERN = re.compile(r"^exp_\d{8}_[a-z0-9]+(?:_[a-z0-9]+)*$")
+NonEmptyString = Annotated[str, Field(min_length=1)]
+PositivePixelDimension = Annotated[int, Field(gt=0)]
 
 
 class ExperimentRecord(BaseModel):
@@ -27,6 +29,12 @@ class ExperimentRecord(BaseModel):
     dataset_manifest_hash: str | None
     random_seed: int
     hardware: str = Field(min_length=1)
+    model_format: NonEmptyString | None
+    input_size_px: tuple[PositivePixelDimension, PositivePixelDimension] | None
+    precision: NonEmptyString | None
+    pipeline_boundary: NonEmptyString | None
+    dataset_split: NonEmptyString | None
+    duration_s: float | None = Field(ge=0, allow_inf_nan=False)
     firmware_version: str | None
     model_hash: str | None
     metrics: dict[str, Any]
@@ -80,6 +88,12 @@ def initialise_experiment(
     hypothesis: str = "TBD: state the expected measurable result.",
     random_seed: int = 0,
     hardware: str = "desktop environment; exact hardware TBD",
+    model_format: str | None = None,
+    input_size_px: tuple[int, int] | None = None,
+    precision: str | None = None,
+    pipeline_boundary: str | None = None,
+    dataset_split: str | None = None,
+    duration_s: float | None = None,
     dataset_manifest_hash: str | None = None,
     firmware_version: str | None = None,
     model_hash: str | None = None,
@@ -107,6 +121,12 @@ def initialise_experiment(
         dataset_manifest_hash=dataset_manifest_hash,
         random_seed=random_seed,
         hardware=hardware,
+        model_format=model_format,
+        input_size_px=input_size_px,
+        precision=precision,
+        pipeline_boundary=pipeline_boundary,
+        dataset_split=dataset_split,
+        duration_s=duration_s,
         firmware_version=firmware_version,
         model_hash=model_hash,
         metrics=dict(metrics or {}),

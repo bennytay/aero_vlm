@@ -1,6 +1,6 @@
 # µAeroTrack milestones
 
-- **M0 Foundation:** frozen vocabulary, contracts, schemas, validation, and
+- **M0 Foundation (complete):** frozen vocabulary, contracts, schemas, validation, and
   experiment records.
 - **M1 Public detector:** public checkpoint inference and portable export.
 - **M2 Aerial data:** reproducible VisDrone and UAVDT manifests.
@@ -13,4 +13,3 @@
 
 The detailed gates are in
 [`implementation_plan_v2.md`](implementation_plan_v2.md).
-

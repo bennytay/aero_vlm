@@ -24,6 +24,9 @@ not hide a failed earlier gate.
 
 ## Phase 0: freeze the foundation
 
+**Status:** complete on 31 August 2026. The gate passes with checked-in schemas
+and the full test, lint, and type-check suite.
+
 **Purpose:** establish one precise foundation for all detection and tracking
 work.
 

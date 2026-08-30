@@ -40,5 +40,21 @@ and accelerator dependencies will be optional.
 
 ## Current status
 
-The design is complete. Phase 0 will freeze the detection vocabulary, contracts,
-JSON Schemas, validation rules, and experiment metadata before model work begins.
+Phase 0 is complete. It provides:
+
+- the frozen [`vocabulary_detection_v1.yaml`](configs/vocabulary_detection_v1.yaml);
+- immutable detection, detection-frame, track, and track-frame contracts;
+- checked-in JSON Schemas under `interfaces/schemas/`;
+- strict box, label, timing, lifecycle, staleness, and duplicate-ID validation;
+- a schema generator at `scripts/generate_schemas.py`; and
+- experiment records with model format, input size, precision, pipeline boundary,
+  dataset split, and duration.
+
+Regenerate and verify contracts with:
+
+```shell
+uv run python scripts/generate_schemas.py
+uv run pytest
+```
+
+Phase 1 is the public detector smoke test.

@@ -1,0 +1,143 @@
+{
+  "$defs": {
+    "DetectionLabel": {
+      "description": "Version 1 aerial detection class names.",
+      "enum": [
+        "pedestrian",
+        "person",
+        "bicycle",
+        "car",
+        "van",
+        "truck",
+        "tricycle",
+        "awning-tricycle",
+        "bus",
+        "motor"
+      ],
+      "title": "DetectionLabel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One tracked object, fresh or motion-predicted, in one frame.",
+  "properties": {
+    "contract_version": {
+      "const": "v1",
+      "default": "v1",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "frame_id": {
+      "minimum": 0,
+      "title": "Frame Id",
+      "type": "integer"
+    },
+    "captured_at_monotonic_ns": {
+      "minimum": 0,
+      "title": "Captured At Monotonic Ns",
+      "type": "integer"
+    },
+    "track_id": {
+      "minimum": 1,
+      "title": "Track Id",
+      "type": "integer"
+    },
+    "label_id": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Label Id",
+      "type": "integer"
+    },
+    "label": {
+      "$ref": "#/$defs/DetectionLabel"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "bbox_norm_xyxy": {
+      "maxItems": 4,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        }
+      ],
+      "title": "Bbox Norm Xyxy",
+      "type": "array"
+    },
+    "velocity_norm_per_s": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Velocity Norm Per S",
+      "type": "array"
+    },
+    "age_frames": {
+      "minimum": 1,
+      "title": "Age Frames",
+      "type": "integer"
+    },
+    "hits": {
+      "minimum": 1,
+      "title": "Hits",
+      "type": "integer"
+    },
+    "time_since_update_frames": {
+      "minimum": 0,
+      "title": "Time Since Update Frames",
+      "type": "integer"
+    },
+    "observed_this_frame": {
+      "title": "Observed This Frame",
+      "type": "boolean"
+    },
+    "stale": {
+      "title": "Stale",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "frame_id",
+    "captured_at_monotonic_ns",
+    "track_id",
+    "label_id",
+    "label",
+    "confidence",
+    "bbox_norm_xyxy",
+    "velocity_norm_per_s",
+    "age_frames",
+    "hits",
+    "time_since_update_frames",
+    "observed_this_frame",
+    "stale"
+  ],
+  "title": "TrackObservation",
+  "type": "object"
+}

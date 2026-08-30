@@ -1,7 +1,7 @@
 # Project brief v2: low-cost aerial detection and tracking
 
 **Working name:** µAeroTrack  
-**Status:** design complete; implementation has not started  
+**Status:** Phase 0 foundation complete; public detector work is next
 **Date:** 31 August 2026  
 
 ## One-sentence brief

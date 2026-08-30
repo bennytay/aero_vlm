@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "DetectionLabel": {
+      "description": "Version 1 aerial detection class names.",
+      "enum": [
+        "pedestrian",
+        "person",
+        "bicycle",
+        "car",
+        "van",
+        "truck",
+        "tricycle",
+        "awning-tricycle",
+        "bus",
+        "motor"
+      ],
+      "title": "DetectionLabel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One fresh model detection in one captured frame.",
+  "properties": {
+    "contract_version": {
+      "const": "v1",
+      "default": "v1",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "frame_id": {
+      "minimum": 0,
+      "title": "Frame Id",
+      "type": "integer"
+    },
+    "captured_at_monotonic_ns": {
+      "minimum": 0,
+      "title": "Captured At Monotonic Ns",
+      "type": "integer"
+    },
+    "label_id": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Label Id",
+      "type": "integer"
+    },
+    "label": {
+      "$ref": "#/$defs/DetectionLabel"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "bbox_norm_xyxy": {
+      "maxItems": 4,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        }
+      ],
+      "title": "Bbox Norm Xyxy",
+      "type": "array"
+    },
+    "model_name": {
+      "minLength": 1,
+      "title": "Model Name",
+      "type": "string"
+    }
+  },
+  "required": [
+    "frame_id",
+    "captured_at_monotonic_ns",
+    "label_id",
+    "label",
+    "confidence",
+    "bbox_norm_xyxy",
+    "model_name"
+  ],
+  "title": "Detection",
+  "type": "object"
+}

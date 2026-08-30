@@ -52,8 +52,10 @@ def test_parse_uavdt_gt_ignore_rejects_malformed_row() -> None:
         parse_uavdt_gt_ignore("1,0,0,50\n")
 
 
-def make_source_split(tmp_path: Path) -> Path:
-    source_dir = tmp_path / "source" / "UAVDT"
+def make_source_split(external_dir: Path) -> Path:
+    # Deliberately outside repo_root; see the matching comment in
+    # test_dataset_visdrone_mot.py.
+    source_dir = external_dir / "UAVDT"
     sequence_dir = source_dir / "UAV-benchmark-M" / "M0101"
     sequence_dir.mkdir(parents=True)
     (source_dir / "GT").mkdir(parents=True)
@@ -68,9 +70,11 @@ def make_source_split(tmp_path: Path) -> Path:
     return source_dir
 
 
-def test_convert_uavdt_split_builds_per_frame_manifest(tmp_path: Path) -> None:
+def test_convert_uavdt_split_builds_per_frame_manifest(
+    tmp_path: Path, tmp_path_factory: pytest.TempPathFactory
+) -> None:
     repo_root = tmp_path
-    source_dir = make_source_split(tmp_path)
+    source_dir = make_source_split(tmp_path_factory.mktemp("external"))
 
     manifest = convert_uavdt_split(
         source_dir,

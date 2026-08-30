@@ -49,14 +49,17 @@ images/YOLO labels/full annotations land under gitignored
 (`data/manifests/visdrone_det_<split>_v1.json`) holds no per-box geometry, so
 it stays small enough to check in.
 
-### VisDrone-MOT/VID and UAVDT (manual download required)
+### VisDrone-MOT/VID (manual download, done for train+val)
 
-Neither has a scriptable mirror. VisDrone-MOT/VID must be fetched from the
-Google Drive/OneDrive/BaiduDisk links in the
-[VisDrone dataset repository](https://github.com/VisDrone/VisDrone-Dataset);
-UAVDT from the links on its
-[project page](https://sites.google.com/view/grli-uavdt). Extract an archive
-locally, then convert it in place — nothing is downloaded automatically:
+No scriptable mirror exists (the host serving DET returns 404 for MOT/VID/
+UAVDT filenames). Fetch `VisDrone2019-MOT-{train,val}.zip` from the Google
+Drive/OneDrive/BaiduDisk links in the
+[VisDrone dataset repository](https://github.com/VisDrone/VisDrone-Dataset)
+— under "Task 4: Multi-Object Tracking" — prefer Google Drive over BaiduYun
+(Baidu requires a Chinese phone/app for large files). Skip "Task 2: VID": it
+ships the same underlying video sequences as MOT at identical archive sizes,
+just packaged for a different challenge track; MOT's annotations are the
+superset this project needs. Extract, then convert in place:
 
 ```shell
 uv run wam-dataset visdrone-mot-convert \
@@ -64,6 +67,22 @@ uv run wam-dataset visdrone-mot-convert \
   --split train \
   --source-url "manual-download://visdrone-mot-train (Google Drive)"
 
+uv run wam-dataset visdrone-mot-convert \
+  --source-dir path/to/VisDrone2019-MOT-val \
+  --split val \
+  --source-url "manual-download://visdrone-mot-val (Google Drive)"
+```
+
+Real train+val numbers, cross-dataset dedup findings, and their implications
+for Phase 3/4 evaluation choices are recorded in
+`evaluation/experiments/exp_20260831_phase2_visdrone_det/report.md`.
+
+### UAVDT (manual download required, not yet run)
+
+Also no scriptable mirror; fetch from the links on its
+[project page](https://sites.google.com/view/grli-uavdt). Extract, then:
+
+```shell
 uv run wam-dataset uavdt-convert \
   --source-dir path/to/UAVDT \
   --split train \

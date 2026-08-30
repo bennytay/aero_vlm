@@ -34,8 +34,13 @@ def test_parse_visdrone_mot_annotation_rejects_malformed_row() -> None:
         parse_visdrone_mot_annotation("1,1,0,0,50,50,1,0,0\n")
 
 
-def make_source_split(tmp_path: Path) -> Path:
-    source_dir = tmp_path / "source" / "VisDrone2019-MOT-train"
+def make_source_split(external_dir: Path) -> Path:
+    # Deliberately outside repo_root, like a real manually-downloaded
+    # archive extracted to ~/Downloads: catches converters that forget to
+    # copy frames into the project tree before computing a repo-relative
+    # path (see the visdrone_mot.py/uavdt.py fix for the real bug this
+    # caught).
+    source_dir = external_dir / "VisDrone2019-MOT-train"
     sequence_dir = source_dir / "sequences" / "uav0000001_00000_v"
     sequence_dir.mkdir(parents=True)
     (source_dir / "annotations").mkdir(parents=True)
@@ -48,10 +53,10 @@ def make_source_split(tmp_path: Path) -> Path:
 
 
 def test_convert_visdrone_mot_split_builds_per_frame_manifest(
-    tmp_path: Path,
+    tmp_path: Path, tmp_path_factory: pytest.TempPathFactory
 ) -> None:
     repo_root = tmp_path
-    source_dir = make_source_split(tmp_path)
+    source_dir = make_source_split(tmp_path_factory.mktemp("external"))
 
     manifest = convert_visdrone_mot_split(
         source_dir,

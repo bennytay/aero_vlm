@@ -19,6 +19,7 @@ downloaded sequence before trusting the output for training.
 from __future__ import annotations
 
 import json
+import shutil
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -180,10 +181,11 @@ def convert_uavdt_sequence(
             ignored_by_frame[region.frame_index].append(region)
 
     split_output = output_root / split / sequence_id
+    images_dir = split_output / "images"
     labels_dir = split_output / "labels"
     annotations_full_dir = split_output / "annotations_full"
-    labels_dir.mkdir(parents=True, exist_ok=True)
-    annotations_full_dir.mkdir(parents=True, exist_ok=True)
+    for directory in (images_dir, labels_dir, annotations_full_dir):
+        directory.mkdir(parents=True, exist_ok=True)
 
     samples: list[ImageRecord] = []
     for frame_path in frame_paths:
@@ -191,7 +193,11 @@ def convert_uavdt_sequence(
         boxes = boxes_by_frame.get(frame_index, [])
         ignored_regions = ignored_by_frame.get(frame_index, [])
 
-        with Image.open(frame_path) as image:
+        destination_image = images_dir / frame_path.name
+        if not destination_image.exists():
+            shutil.copy2(frame_path, destination_image)
+
+        with Image.open(destination_image) as image:
             width_px, height_px = image.size
 
         yolo_lines = [_yolo_line(box, width_px, height_px) for box in boxes]
@@ -232,8 +238,10 @@ def convert_uavdt_sequence(
                 split=split,
                 source_url=source_url,
                 original_id=f"{sequence_id}_{frame_path.stem}",
-                relative_image_path=frame_path.relative_to(repo_root).as_posix(),
-                sha256=f"sha256:{file_sha256(frame_path)}",
+                relative_image_path=destination_image.relative_to(
+                    repo_root
+                ).as_posix(),
+                sha256=f"sha256:{file_sha256(destination_image)}",
                 width_px=width_px,
                 height_px=height_px,
                 sequence_id=sequence_id,

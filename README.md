@@ -82,24 +82,31 @@ Ultralytics code and released model artefacts are offered under
 AGPL-3.0-or-later or an Ultralytics Enterprise licence. Confirm the appropriate
 licence before distributing a product built on this baseline.
 
-Phase 2 is partially complete. VisDrone-DET (train/val/test-dev) downloads
-and converts end to end with real, verified results: 6471/548/1610 images,
-343205/38759/75102 trainable boxes, disjoint-split validation, and a resize
-report showing 45% of val boxes already fall below 8px minimum dimension at
-640 input size (80% at 320) — see
-[`exp_20260831_phase2_visdrone_det`](evaluation/experiments/exp_20260831_phase2_visdrone_det/report.md).
-VisDrone-MOT/VID and UAVDT have no scriptable public mirror; their converters
-are implemented and unit-tested against synthetic fixtures but not yet run
-against real data, since manual downloads are required. See
-[`data/README.md`](data/README.md) for both paths:
+Phase 2 is mostly complete. VisDrone-DET (train/val/test-dev, scriptable
+download) and VisDrone-MOT (train/val, manual download) are both assembled
+with real, verified results: 6471/548/1610 DET images and 24201/2846 MOT
+frames, disjoint-split validation across all five manifests, and a resize
+report showing 45% of DET val boxes already fall below 8px minimum dimension
+at 640 input size (80% at 320). Cross-dataset dedup also found a genuine
+upstream leak worth knowing about: 30 duplicate groups cross a DET/MOT
+train-eval split boundary (e.g. 22 DET-val images are near-duplicates of 564
+MOT-train frames) — see
+[`exp_20260831_phase2_visdrone_det`](evaluation/experiments/exp_20260831_phase2_visdrone_det/report.md)
+for the full breakdown and what it means for Phase 3/4 evaluation choices.
+UAVDT has no scriptable public mirror and remains infrastructure-only
+(converter implemented and unit-tested, no real data downloaded). See
+[`data/README.md`](data/README.md) for all three paths:
 
 ```shell
 uv sync --group dataset
 uv run wam-dataset visdrone-det-download --split all
 uv run wam-dataset visdrone-det-convert --split all
+uv run wam-dataset visdrone-mot-convert --source-dir path/to/VisDrone2019-MOT-train --split train --source-url "..."
 uv run wam-dataset validate-splits \
   --manifest data/manifests/visdrone_det_train_v1.json \
   --manifest data/manifests/visdrone_det_val_v1.json \
-  --manifest data/manifests/visdrone_det_test_v1.json
+  --manifest data/manifests/visdrone_det_test_v1.json \
+  --manifest data/manifests/visdrone_mot_train_v1.json \
+  --manifest data/manifests/visdrone_mot_val_v1.json
 uv run wam-dataset report --manifest data/manifests/visdrone_det_val_v1.json
 ```

@@ -84,14 +84,21 @@ the ONNX model parses; parity differences are documented.
 
 ## Phase 2: assemble public aerial data
 
-**Status:** VisDrone-DET is complete on 31 August 2026, with real downloaded
-and converted data, disjoint-split validation, duplicate detection, and a
-resize report (see
-`evaluation/experiments/exp_20260831_phase2_visdrone_det/`). VisDrone-MOT/VID
-and UAVDT conversion/manifest code is implemented and unit-tested but has not
-run against real data, because neither has a scriptable download source; see
+**Status:** VisDrone-DET and VisDrone-MOT (train+val) are complete on 31
+August 2026, with real downloaded and converted data, disjoint-split
+validation across all five manifests, cross-dataset duplicate detection, and
+resize reports (see
+`evaluation/experiments/exp_20260831_phase2_visdrone_det/`). That dedup run
+found a real, upstream leak worth carrying into later phases: 30 duplicate
+groups cross a DET/MOT train-eval split boundary (e.g. 22 DET-val images are
+near-duplicates of 564 MOT-train frames) — not something to fix by altering
+official splits, but something Phase 3/4 evaluation choices should account
+for; see the experiment report for the full breakdown. VisDrone-VID and
+UAVDT conversion/manifest code is implemented and unit-tested but has not run
+against real data — UAVDT has no scriptable download source and VID was
+skipped as redundant with MOT (same underlying video sequences); see
 `data/README.md` for the manual-download path. The gate below is met for
-VisDrone-DET only.
+VisDrone-DET and VisDrone-MOT; UAVDT remains the one gap.
 
 **Purpose:** train on the camera geometry the system will actually encounter.
 

@@ -84,6 +84,15 @@ the ONNX model parses; parity differences are documented.
 
 ## Phase 2: assemble public aerial data
 
+**Status:** VisDrone-DET is complete on 31 August 2026, with real downloaded
+and converted data, disjoint-split validation, duplicate detection, and a
+resize report (see
+`evaluation/experiments/exp_20260831_phase2_visdrone_det/`). VisDrone-MOT/VID
+and UAVDT conversion/manifest code is implemented and unit-tested but has not
+run against real data, because neither has a scriptable download source; see
+`data/README.md` for the manual-download path. The gate below is met for
+VisDrone-DET only.
+
 **Purpose:** train on the camera geometry the system will actually encounter.
 
 1. Download VisDrone-DET train and validation subsets through reproducible

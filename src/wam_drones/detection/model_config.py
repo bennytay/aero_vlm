@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from hashlib import sha256
 from pathlib import Path
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from wam_drones.detection.vocabulary import DetectionLabel
+from wam_drones.net import file_sha256 as file_sha256
 
 
 class DetectorModelConfig(BaseModel):
@@ -35,15 +35,6 @@ def load_model_config(path: Path) -> DetectorModelConfig:
     return DetectorModelConfig.model_validate(
         yaml.safe_load(path.read_text(encoding="utf-8"))
     )
-
-
-def file_sha256(path: Path) -> str:
-    """Return the lowercase SHA-256 digest for a file."""
-    digest = sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def verify_checkpoint(path: Path, expected_sha256: str) -> None:

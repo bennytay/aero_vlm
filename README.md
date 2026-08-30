@@ -81,3 +81,25 @@ It cannot emit the VisDrone-only `pedestrian`, `van`, `tricycle`, or
 Ultralytics code and released model artefacts are offered under
 AGPL-3.0-or-later or an Ultralytics Enterprise licence. Confirm the appropriate
 licence before distributing a product built on this baseline.
+
+Phase 2 is partially complete. VisDrone-DET (train/val/test-dev) downloads
+and converts end to end with real, verified results: 6471/548/1610 images,
+343205/38759/75102 trainable boxes, disjoint-split validation, and a resize
+report showing 45% of val boxes already fall below 8px minimum dimension at
+640 input size (80% at 320) — see
+[`exp_20260831_phase2_visdrone_det`](evaluation/experiments/exp_20260831_phase2_visdrone_det/report.md).
+VisDrone-MOT/VID and UAVDT have no scriptable public mirror; their converters
+are implemented and unit-tested against synthetic fixtures but not yet run
+against real data, since manual downloads are required. See
+[`data/README.md`](data/README.md) for both paths:
+
+```shell
+uv sync --group dataset
+uv run wam-dataset visdrone-det-download --split all
+uv run wam-dataset visdrone-det-convert --split all
+uv run wam-dataset validate-splits \
+  --manifest data/manifests/visdrone_det_train_v1.json \
+  --manifest data/manifests/visdrone_det_val_v1.json \
+  --manifest data/manifests/visdrone_det_test_v1.json
+uv run wam-dataset report --manifest data/manifests/visdrone_det_val_v1.json
+```

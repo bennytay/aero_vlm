@@ -1,0 +1,190 @@
+{
+  "$defs": {
+    "ImageRecord": {
+      "additionalProperties": false,
+      "description": "Provenance for one converted image; box geometry lives alongside it.",
+      "properties": {
+        "dataset": {
+          "enum": [
+            "visdrone_det",
+            "visdrone_mot",
+            "visdrone_vid",
+            "uavdt"
+          ],
+          "title": "Dataset",
+          "type": "string"
+        },
+        "split": {
+          "enum": [
+            "train",
+            "val",
+            "test"
+          ],
+          "title": "Split",
+          "type": "string"
+        },
+        "source_url": {
+          "minLength": 1,
+          "title": "Source Url",
+          "type": "string"
+        },
+        "original_id": {
+          "minLength": 1,
+          "title": "Original Id",
+          "type": "string"
+        },
+        "relative_image_path": {
+          "minLength": 1,
+          "title": "Relative Image Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "width_px": {
+          "exclusiveMinimum": 0,
+          "title": "Width Px",
+          "type": "integer"
+        },
+        "height_px": {
+          "exclusiveMinimum": 0,
+          "title": "Height Px",
+          "type": "integer"
+        },
+        "sequence_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sequence Id"
+        },
+        "frame_number": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frame Number"
+        },
+        "annotation_conversion_version": {
+          "minLength": 1,
+          "title": "Annotation Conversion Version",
+          "type": "string"
+        },
+        "relative_label_path": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Relative Label Path"
+        },
+        "relative_annotation_path": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Relative Annotation Path"
+        },
+        "box_count": {
+          "minimum": 0,
+          "title": "Box Count",
+          "type": "integer"
+        },
+        "ignored_region_count": {
+          "minimum": 0,
+          "title": "Ignored Region Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "dataset",
+        "split",
+        "source_url",
+        "original_id",
+        "relative_image_path",
+        "sha256",
+        "width_px",
+        "height_px",
+        "annotation_conversion_version",
+        "box_count",
+        "ignored_region_count"
+      ],
+      "title": "ImageRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Reproducible collection of provenance rows for one dataset split.",
+  "properties": {
+    "version": {
+      "const": "v1",
+      "default": "v1",
+      "title": "Version",
+      "type": "string"
+    },
+    "dataset": {
+      "enum": [
+        "visdrone_det",
+        "visdrone_mot",
+        "visdrone_vid",
+        "uavdt"
+      ],
+      "title": "Dataset",
+      "type": "string"
+    },
+    "split": {
+      "enum": [
+        "train",
+        "val",
+        "test"
+      ],
+      "title": "Split",
+      "type": "string"
+    },
+    "created_utc": {
+      "format": "date-time",
+      "title": "Created Utc",
+      "type": "string"
+    },
+    "samples": {
+      "items": {
+        "$ref": "#/$defs/ImageRecord"
+      },
+      "title": "Samples",
+      "type": "array"
+    }
+  },
+  "required": [
+    "dataset",
+    "split",
+    "created_utc",
+    "samples"
+  ],
+  "title": "DatasetManifest",
+  "type": "object"
+}

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from wam_drones.dataset.manifest import DatasetManifest, ImageRecord
 from wam_drones.detection import (
     Detection,
     FrameDetections,
@@ -17,6 +18,8 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "frame_detections_v1.schema.json": FrameDetections,
     "frame_tracks_v1.schema.json": FrameTracks,
     "track_observation_v1.schema.json": TrackObservation,
+    "image_record_v1.schema.json": ImageRecord,
+    "dataset_manifest_v1.schema.json": DatasetManifest,
 }
 
 

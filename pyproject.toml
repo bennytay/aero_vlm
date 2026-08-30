@@ -26,9 +26,13 @@ detection = [
   "onnxruntime>=1.20,<2",
   "ultralytics==8.4.135",
 ]
+dataset = [
+  "pillow>=10,<12",
+]
 
 [project.scripts]
 wam-detect = "wam_drones.detection.cli:main"
+wam-dataset = "wam_drones.dataset.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/wam_drones"]
@@ -51,4 +55,8 @@ packages = ["wam_drones"]
 
 [[tool.mypy.overrides]]
 module = ["cv2", "onnx", "ultralytics"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["PIL", "PIL.*"]
 ignore_missing_imports = true

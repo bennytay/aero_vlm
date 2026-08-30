@@ -1,0 +1,32 @@
+{
+  "experiment_id": "exp_20260831_phase0_foundation",
+  "question": "Are the detection vocabulary and runtime contracts precise, versioned, and reproducible?",
+  "hypothesis": "Frozen schemas and validation tests reject inconsistent labels, boxes, timing, lifecycle state, and duplicate track IDs.",
+  "git_commit": "fce56104fd146b5d4152dc1dfaa57d7889d0f921",
+  "config_hash": "sha256:42b75c41ad31b0c65e71d33b16f498bd03c82f0bfb844e60f200b07a79d61bab",
+  "dataset_manifest_hash": null,
+  "random_seed": 0,
+  "hardware": "development computer; contract-only checks",
+  "model_format": "Pydantic JSON Schema",
+  "input_size_px": null,
+  "precision": null,
+  "pipeline_boundary": "configuration load through contract serialisation",
+  "dataset_split": "deterministic unit fixtures",
+  "duration_s": null,
+  "firmware_version": null,
+  "model_hash": null,
+  "metrics": {
+    "pytest_passed": 17,
+    "pytest_skipped": 0,
+    "ruff_errors": 0,
+    "mypy_errors": 0
+  },
+  "artefact_paths": [
+    "configs/vocabulary_detection_v1.yaml",
+    "interfaces/schemas/detection_v1.schema.json",
+    "interfaces/schemas/frame_detections_v1.schema.json",
+    "interfaces/schemas/frame_tracks_v1.schema.json",
+    "interfaces/schemas/track_observation_v1.schema.json"
+  ],
+  "created_utc": "2026-08-30T15:06:08.148364Z"
+}

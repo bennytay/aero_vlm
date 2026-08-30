@@ -1,0 +1,39 @@
+{
+  "experiment_id": "exp_20260831_phase1_public_detector",
+  "question": "Can the untouched public YOLO26n model run through the project contract and portable ONNX path?",
+  "hypothesis": "The pinned model will produce schema-valid JSONL and an annotated preview, and ONNX boxes will match PyTorch boxes at IoU >= 0.5.",
+  "git_commit": "dfda5c6c22d7f745044a567f7aacfe5316fb4195",
+  "config_hash": "sha256:c8a118fdb0e29adc871ff5c7000b99eacc2dc304a83cd139cdf958fe35bd2c40",
+  "dataset_manifest_hash": null,
+  "random_seed": 0,
+  "hardware": "Apple Silicon development host",
+  "model_format": "PyTorch and ONNX",
+  "input_size_px": [640, 640],
+  "precision": "fp32",
+  "pipeline_boundary": "decoded frame before inference to validated FrameDetections",
+  "dataset_split": "public smoke fixtures",
+  "duration_s": 3.151338708,
+  "firmware_version": null,
+  "model_hash": "sha256:9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef",
+  "metrics": {
+    "public_image_detections": 5,
+    "public_image_pipeline_latency_ms": 109.39875,
+    "video_frames": 11,
+    "video_mean_pipeline_latency_ms": 34.33399254545455,
+    "parity_matches": 5,
+    "parity_mean_iou": 0.9657522563807446,
+    "parity_min_iou": 0.9028213978510315,
+    "parity_max_confidence_delta": 0.1059112548828125,
+    "visdrone_fixture_run_status": "pending official archive"
+  },
+  "artefact_paths": [
+    "artefacts/image/predictions.jsonl",
+    "artefacts/image/annotated/phase1_bus.jpg",
+    "artefacts/video/predictions.jsonl",
+    "artefacts/video/annotated.mp4",
+    "artefacts/video/error_frames/",
+    "artefacts/video/metrics.json",
+    "artefacts/parity.json"
+  ],
+  "created_utc": "2026-08-31T00:00:00Z"
+}

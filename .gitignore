@@ -15,6 +15,8 @@ data/processed/
 data/downloads/
 data/samples/*
 !data/samples/.gitkeep
+/runs/
+/models/
 
 # Generated experiment artefacts (metadata and reports remain versioned)
 evaluation/experiments/*/artefacts/
@@ -27,6 +29,7 @@ evaluation/experiments/*/artefacts/
 *.safetensors
 configs/models/*
 !configs/models/.gitkeep
+!configs/models/yolo26n_coco.yaml
 
 # Build trees
 build/

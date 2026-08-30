@@ -57,4 +57,27 @@ uv run python scripts/generate_schemas.py
 uv run pytest
 ```
 
-Phase 1 is the public detector smoke test.
+Phase 1 is implemented. It provides a pinned public YOLO26n smoke-test path,
+strict conversion from supported COCO classes into the v1 detection contract,
+image/folder/video inference, an annotated tracked video preview, JSONL and
+latency artefacts, checked ONNX export, and IoU-based PyTorch/ONNX parity.
+
+Install the optional runtime and run an image, folder, or video. The first run
+downloads `yolo26n.pt` and refuses it unless its SHA-256 matches the checked-in
+model config:
+
+```shell
+uv sync --group detection
+uv run wam-detect run path/to/image-or-folder-or-video --output-dir runs/phase1
+uv run wam-detect export --output-dir models
+uv run wam-detect parity path/to/image.jpg --onnx models/yolo26n.onnx
+```
+
+The public checkpoint is COCO-trained. Phase 1 maps only unambiguous overlapping
+classes: `person`, `bicycle`, `car`, `motorcycle` to `motor`, `bus`, and `truck`.
+It cannot emit the VisDrone-only `pedestrian`, `van`, `tricycle`, or
+`awning-tricycle` labels; those remain Phase 3 fine-tuning work.
+
+Ultralytics code and released model artefacts are offered under
+AGPL-3.0-or-later or an Ultralytics Enterprise licence. Confirm the appropriate
+licence before distributing a product built on this baseline.

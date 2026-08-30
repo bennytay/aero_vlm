@@ -20,6 +20,15 @@ dev = [
   "ruff>=0.6,<1",
   "types-pyyaml>=6.0.12,<7",
 ]
+detection = [
+  "lap==0.5.12",
+  "onnx>=1.17,<2",
+  "onnxruntime>=1.20,<2",
+  "ultralytics==8.4.135",
+]
+
+[project.scripts]
+wam-detect = "wam_drones.detection.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/wam_drones"]
@@ -39,3 +48,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 python_version = "3.11"
 strict = true
 packages = ["wam_drones"]
+
+[[tool.mypy.overrides]]
+module = ["cv2", "onnx", "ultralytics"]
+ignore_missing_imports = true

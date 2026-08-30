@@ -9,6 +9,7 @@ from wam_drones.detection.contracts import (
     TrackObservation,
     validate_frame_sequence,
 )
+from wam_drones.detection.inference import detect_image, detect_video
 from wam_drones.detection.vocabulary import (
     DETECTION_ID_BY_LABEL,
     DETECTION_LABEL_BY_ID,
@@ -28,6 +29,8 @@ __all__ = [
     "FrameDetections",
     "FrameTracks",
     "TrackObservation",
+    "detect_image",
+    "detect_video",
     "load_detection_vocabulary",
     "validate_frame_sequence",
 ]

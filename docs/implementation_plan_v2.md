@@ -59,6 +59,11 @@ invalid boxes, unknown labels, duplicate IDs, and non-monotonic frame time.
 
 ## Phase 1: make the public model run before training
 
+**Status:** implemented on 31 August 2026. The optional runtime, pinned model
+identity, contract adapter, CLI, annotated tracked preview, ONNX validation, and
+IoU parity report are checked in. The reproducible public-data smoke run is
+recorded under `evaluation/experiments/exp_20260831_phase1_public_detector/`.
+
 **Purpose:** prove the software path with the smallest possible investment.
 
 1. Add an optional `detection` dependency group, keeping normal `uv sync`

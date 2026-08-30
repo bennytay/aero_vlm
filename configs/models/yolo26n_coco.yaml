@@ -1,0 +1,18 @@
+name: yolo26n-coco-ultralytics-8.4.135
+package: ultralytics
+package_version: 8.4.135
+license: AGPL-3.0-or-later
+checkpoint: yolo26n.pt
+checkpoint_url: https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt
+checkpoint_sha256: 9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef
+input_size_px: 640
+precision: fp32
+source_taxonomy: COCO
+target_vocabulary: vocabulary_detection_v1
+class_mapping:
+  person: person
+  bicycle: bicycle
+  car: car
+  motorcycle: motor
+  bus: bus
+  truck: truck

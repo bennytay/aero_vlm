@@ -16,7 +16,7 @@ data/downloads/
 data/samples/*
 !data/samples/.gitkeep
 
-# Generated teacher artefacts (metadata and reports remain versioned)
+# Generated experiment artefacts (metadata and reports remain versioned)
 evaluation/experiments/*/artefacts/
 
 # Model artefacts and weights
@@ -28,11 +28,9 @@ evaluation/experiments/*/artefacts/
 configs/models/*
 !configs/models/.gitkeep
 
-# Firmware/build trees
+# Build trees
 build/
 dist/
-firmware/esp32_p4/build/
-firmware/esp32_p4/managed_components/
 
 # Runtime and flight logs
 logs/*

@@ -5,24 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "wam_drones"
 version = "0.1.0"
-description = "Engineering controls for the µAeroVLM research project"
+description = "Low-cost onboard aerial object detection and tracking"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 dependencies = [
   "pydantic>=2.9,<3",
   "pyyaml>=6.0.2,<7",
-]
-
-[project.optional-dependencies]
-training = [
-  "numpy>=2.1,<3",
-  "onnx>=1.17,<2",
-  "onnxruntime>=1.20,<2",
-  "open-clip-torch>=3.2,<4",
-  "pandas>=2.2,<3",
-  "pillow>=11,<13",
-  "torch>=2.4,<3",
-  "torchvision>=0.19,<1",
 ]
 
 [dependency-groups]
@@ -51,8 +39,3 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 python_version = "3.11"
 strict = true
 packages = ["wam_drones"]
-
-[[tool.mypy.overrides]]
-module = ["wam_drones.student.*"]
-ignore_missing_imports = true
-disable_error_code = ["import-not-found", "misc", "unused-ignore"]

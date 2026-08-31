@@ -122,9 +122,12 @@ it adds another neural network and a significant compute cost.
 
 ### Edge hardware
 
-The **working flight target** is a Raspberry Pi 5 with a Hailo-8L-class AI
-accelerator, a CSI camera, storage, and a regulated 5 V supply. This is not the
-absolute cheapest board. It is the cheapest current route with a mature public
+The **working flight target** is a Raspberry Pi 5 with **4GB RAM** and a
+**Raspberry Pi AI HAT+ 13 TOPS** (Hailo-8L, INT8), plus a CSI camera, storage,
+and a regulated 5 V supply. The 4GB board is the budget baseline for a lean,
+headless camera/tracker/logging pipeline; 2GB is not an accepted target. The
+AI HAT+ 13 TOPS is the budget accelerator baseline. This is not the absolute
+cheapest board, but it is the cheapest current route with a mature public
 camera pipeline, supported model exports, precompiled models, tiling examples,
 and enough community evidence to make “must work” credible.
 

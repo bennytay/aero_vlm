@@ -4,6 +4,18 @@ Fill this inventory by photographing and physically inspecting the bench; do
 not infer owned hardware from chat. Record exact part numbers and revisions,
 weigh flight-bound items, and retain evidence before ordering duplicates.
 
+## Planned budget flight-compute baseline
+
+This is an intended purchase/configuration, not an assertion of owned hardware:
+
+| Component | Selected baseline | Notes |
+|---|---|---|
+| Companion computer | Raspberry Pi 5, 4GB RAM | Lean headless camera/tracker/logging pipeline; 2GB is out of scope. |
+| AI accelerator | Raspberry Pi AI HAT+ 13 TOPS (Hailo-8L, INT8) | Budget vision-inference target for Phase 6. |
+| Cooling | Raspberry Pi Active Cooler | Required for sustained benchmark and flight thermal testing. |
+| Bench power | Official Raspberry Pi 27W USB-C power supply | Bench-only reference supply; flight regulator is separately specified and tested. |
+| Initial storage | 64–128GB high-endurance microSD | Upgrade only after measured video/log retention requires it. |
+
 | Item category | Owned exact item | Quantity | Condition | Measured mass | Interfaces/accessories | Evidence/action |
 |---|---|---:|---|---:|---|---|
 | Development computer and OS | TBD | TBD | TBD | N/A | TBD | Record model, OS, RAM, GPU/NPU, free storage, ports |

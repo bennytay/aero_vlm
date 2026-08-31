@@ -202,9 +202,9 @@ An ESP32-class microcontroller is attractive because it is cheap and low power,
 but it does not provide a credible first target for a multi-scale detector
 operating on enough pixels to see distant aerial objects.
 
-The first credible flight target is a Raspberry Pi 5 paired with a Hailo-8L
-class accelerator. This costs and weighs more than a microcontroller, but it has
-three decisive advantages:
+The first credible flight target is a Raspberry Pi 5 with 4GB RAM paired with a
+Raspberry Pi AI HAT+ 13 TOPS (Hailo-8L, INT8). This costs and weighs more than
+a microcontroller, but it has three decisive advantages:
 
 1. mature camera and Linux tooling;
 2. a public accelerator stack with ready detection, tiling, camera, and video

@@ -182,7 +182,17 @@ used as the score.
 
 ## Phase 5: find the efficient operating point
 
-**Purpose:** save compute without making small targets disappear.
+
+**Purpose:** identify accuracy-qualified operating candidates without making
+small targets disappear. This phase does **not** select the final onboard
+profile: an RTX 3070 cannot predict Raspberry Pi/Hailo latency, power,
+thermals, memory pressure, or export compatibility.
+
+Use the desktop GPU only to measure detector/tracker quality trade-offs and to
+discard clearly unacceptable configurations. In Phase 6, export the surviving
+candidates and benchmark their complete pipeline on the Raspberry Pi 5 (4GB)
+plus AI HAT+ 13 TOPS (Hailo-8L) target. Only those target measurements select
+the actual onboard quality and low-power profiles.
 
 Run a controlled matrix using the same checkpoint and validation sequences:
 
@@ -206,29 +216,32 @@ Tiling policy for the MVP:
 - merge tile and full-frame boxes in original-image coordinates;
 - measure the extra latency and power, not only accuracy.
 
-**Gate:** select one profile that meets the detection/tracking quality floor and
-one low-power profile. The selected profile must include its true full-pipeline
-latency and not merely neural-network inference time.
+**Gate:** retain a small set of candidates that meet the desktop
+detection/tracking quality floor, with their quality trade-offs recorded. Do
+not claim an onboard latency, power, or low-power winner until Phase 6 measures
+the complete pipeline on the target hardware.
 
 ## Phase 6: export to the flight target
 
-**Purpose:** run the chosen detector on Raspberry Pi 5 plus Hailo-8L-class
-hardware.
+**Purpose:** benchmark Phase 5's accuracy-qualified candidates on the Raspberry
+Pi 5 (4GB) plus AI HAT+ 13 TOPS (Hailo-8L), then select the real onboard
+profiles.
 
-1. Freeze the selected checkpoint, input size, class order, and preprocessing.
-2. Export to ONNX with a static batch-one input.
+1. Freeze the checkpoint, class order, and preprocessing for each candidate.
+2. Export each candidate to ONNX with a static batch-one input.
 3. Compile to HEF/target-native format using representative aerial calibration
    images for INT8.
-4. Compare desktop FP32, exported ONNX, Hailo emulator where available, and real
-   Hailo output on the same fixtures.
+4. Compare desktop FP32, exported ONNX, Hailo emulator where available, and
+   real AI HAT+ 13 TOPS INT8 output on the same fixtures.
 5. Match boxes by class and IoU; report score drift, missing boxes, extra boxes,
    and mAP loss after quantisation.
 6. Use a known-good Hailo application pipeline first, then replace only the
    application-specific pieces.
 7. Pin OS image, HailoRT, driver, compiler, model, and application versions.
 
-**Gate:** INT8 accuracy loss is understood, output contracts match, and the
-native device runs 1000 consecutive images without a leak or crash.
+**Gate:** select the onboard quality and low-power profiles from true target
+measurements; INT8 accuracy loss is understood, output contracts match, and
+the native device runs 1000 consecutive images without a leak or crash.
 
 ## Phase 7: build the live camera pipeline
 

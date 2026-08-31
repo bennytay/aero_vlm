@@ -20,7 +20,8 @@ commands to the flight controller.
 - VisDrone detection and tracking categories
 - COCO-pretrained YOLO26n, with YOLO11n as a compatibility fallback
 - ByteTrack baseline and a camera-motion-compensated tracker comparison
-- Raspberry Pi 5 plus Hailo as the first flight target
+- Raspberry Pi 5 (4GB) plus AI HAT+ 13 TOPS (Hailo-8L) as the first flight
+  target
 - MaixCAM2 as the later cost-down target
 - INT8 inference, bounded latest-frame capture, and selective small-object tiling
 

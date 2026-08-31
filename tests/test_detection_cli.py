@@ -16,3 +16,19 @@ def test_cli_accepts_folder_video_export_and_parity_commands(tmp_path: Path) -> 
         ["parity", "image.jpg", "--onnx", str(tmp_path / "model.onnx")]
     )
     assert parity.onnx == tmp_path / "model.onnx"
+
+    prepare = parser.parse_args(["phase3-prepare", "--output-dir", str(tmp_path)])
+    assert prepare.output_dir == tmp_path
+
+    evaluate = parser.parse_args(
+        [
+            "phase3-evaluate",
+            "--checkpoint",
+            "model.pt",
+            "--model-kind",
+            "native",
+            "--output-dir",
+            str(tmp_path),
+        ]
+    )
+    assert evaluate.model_kind == "native"

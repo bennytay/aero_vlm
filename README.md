@@ -110,3 +110,32 @@ uv run wam-dataset validate-splits \
   --manifest data/manifests/visdrone_mot_val_v1.json
 uv run wam-dataset report --manifest data/manifests/visdrone_det_val_v1.json
 ```
+
+Phase 3 is implemented but has not yet been run end-to-end. Its preparation
+command keeps the raw official splits immutable while excluding the documented
+DET-train/DET-val near-duplicate validation image from the primary score. It
+uses 640px aspect-ratio-preserving letterboxing, deterministic training, native
+VisDrone classes, and produces class-level AP-small/precision/recall/FP-per-
+frame plus size, density, occlusion, and scene breakdowns. It also generates a
+required 25 false-negative + 25 false-positive human review pack:
+
+```shell
+uv sync --group detection --group dataset
+uv run wam-detect phase3-prepare \
+  --output-dir evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts/dataset
+uv run wam-detect phase3-evaluate \
+  --checkpoint models/yolo26n.pt --model-kind coco \
+  --manifest evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts/dataset/sequence_safe_val_manifest.json \
+  --output-dir evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts/baseline
+uv run wam-detect phase3-train \
+  --data-yaml evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts/dataset/visdrone_det_phase3.yaml \
+  --output-dir evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts
+uv run wam-detect phase3-evaluate \
+  --checkpoint evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts/train/weights/best.pt \
+  --model-kind native \
+  --manifest evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts/dataset/sequence_safe_val_manifest.json \
+  --output-dir evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts/finetuned
+```
+
+The manual-review packs begin in a pending state and must be completed before
+considering an architecture change.

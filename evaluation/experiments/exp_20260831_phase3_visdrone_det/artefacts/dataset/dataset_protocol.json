@@ -1,0 +1,15 @@
+{
+  "protocol": "official DET train; official DET val excluding known train/val near-duplicate(s) for primary sequence-safe validation",
+  "dedup_report": "/home/bennytay/wam_drones/evaluation/experiments/exp_20260831_phase2_visdrone_det/artefacts/dedup_report.json",
+  "excluded_validation_original_ids": [
+    "0000323_02601_d_0000645"
+  ],
+  "train_image_count": 6471,
+  "sequence_safe_val_image_count": 547,
+  "source_manifest_hash": "sha256:2990abfebb5c61937b7251042df105a6dedd325681db0079553a06cfa2f38358",
+  "letterbox": {
+    "input_size_px": 640,
+    "stretch": false,
+    "crop": false
+  }
+}

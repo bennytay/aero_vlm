@@ -119,6 +119,12 @@ VisDrone classes, and produces class-level AP-small/precision/recall/FP-per-
 frame plus size, density, occlusion, and scene breakdowns. It also generates a
 required 25 false-negative + 25 false-positive human review pack:
 
+On the validated 8 GB RTX 3070 host, the Phase 3 configuration uses fixed
+`batch: 8`. Ultralytics AutoBatch profiling terminated before selecting a batch;
+a one-epoch fixed-batch probe completed cleanly at 8, while 16 triggered
+assignment-step CUDA OOM retries. This is a hardware-specific training-policy
+fallback, not an architecture, class, split, or augmentation change.
+
 ```shell
 uv sync --group detection --group dataset
 uv run wam-detect phase3-prepare \

@@ -3,7 +3,10 @@
 input_size_px: 640
 seed: 20260831
 epochs: 100
-batch: -1
+# Fixed after AutoBatch's CUDA profiling terminated on the Phase 3 RTX 3070
+# host. A one-epoch batch-8 probe completed without OOM retries; batch 16 did
+# not. This explicit value makes the run reproducible on the validated host.
+batch: 8
 workers: 4
 # Letterbox to a square 640x640 input; do not crop or stretch source frames.
 rect: false

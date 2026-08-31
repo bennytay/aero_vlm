@@ -1,0 +1,1 @@
+/home/bennytay/wam_drones/data/raw/visdrone_det/val/images/0000323_02601_d_0000645.jpg

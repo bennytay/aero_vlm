@@ -1,0 +1,902 @@
+[
+  {
+    "kind": "fn",
+    "original_id": "0000244_03500_d_0000008",
+    "image_path": "data/raw/visdrone_det/val/images/0000244_03500_d_0000008.jpg",
+    "class_name": "car",
+    "xyxy": [
+      442.0,
+      204.0,
+      444.0,
+      206.0
+    ],
+    "confidence": null,
+    "area_px2": 4.0,
+    "occlusion": 1,
+    "image": "01_fn_0000244_03500_d_0000008.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000244_01000_d_0000003",
+    "image_path": "data/raw/visdrone_det/val/images/0000244_01000_d_0000003.jpg",
+    "class_name": "motor",
+    "xyxy": [
+      387.0,
+      8.0,
+      390.0,
+      10.0
+    ],
+    "confidence": null,
+    "area_px2": 6.0,
+    "occlusion": 1,
+    "image": "02_fn_0000244_01000_d_0000003.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000249_02073_d_0000007",
+    "image_path": "data/raw/visdrone_det/val/images/0000249_02073_d_0000007.jpg",
+    "class_name": "car",
+    "xyxy": [
+      496.0,
+      155.0,
+      498.0,
+      158.0
+    ],
+    "confidence": null,
+    "area_px2": 6.0,
+    "occlusion": 0,
+    "image": "03_fn_0000249_02073_d_0000007.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000249_02073_d_0000007",
+    "image_path": "data/raw/visdrone_det/val/images/0000249_02073_d_0000007.jpg",
+    "class_name": "car",
+    "xyxy": [
+      495.0,
+      157.0,
+      497.0,
+      160.0
+    ],
+    "confidence": null,
+    "area_px2": 6.0,
+    "occlusion": 0,
+    "image": "04_fn_0000249_02073_d_0000007.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000313_06601_d_0000469",
+    "image_path": "data/raw/visdrone_det/val/images/0000313_06601_d_0000469.jpg",
+    "class_name": "pedestrian",
+    "xyxy": [
+      262.0,
+      368.0,
+      264.0,
+      371.0
+    ],
+    "confidence": null,
+    "area_px2": 6.0,
+    "occlusion": 0,
+    "image": "05_fn_0000313_06601_d_0000469.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000242_06010_d_0000017",
+    "image_path": "data/raw/visdrone_det/val/images/0000242_06010_d_0000017.jpg",
+    "class_name": "car",
+    "xyxy": [
+      494.0,
+      204.0,
+      496.0,
+      208.0
+    ],
+    "confidence": null,
+    "area_px2": 8.0,
+    "occlusion": 2,
+    "image": "06_fn_0000242_06010_d_0000017.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000249_01635_d_0000006",
+    "image_path": "data/raw/visdrone_det/val/images/0000249_01635_d_0000006.jpg",
+    "class_name": "tricycle",
+    "xyxy": [
+      521.0,
+      189.0,
+      523.0,
+      193.0
+    ],
+    "confidence": null,
+    "area_px2": 8.0,
+    "occlusion": 1,
+    "image": "07_fn_0000249_01635_d_0000006.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000249_02073_d_0000007",
+    "image_path": "data/raw/visdrone_det/val/images/0000249_02073_d_0000007.jpg",
+    "class_name": "motor",
+    "xyxy": [
+      471.0,
+      198.0,
+      473.0,
+      202.0
+    ],
+    "confidence": null,
+    "area_px2": 8.0,
+    "occlusion": 1,
+    "image": "08_fn_0000249_02073_d_0000007.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000249_02900_d_0000009",
+    "image_path": "data/raw/visdrone_det/val/images/0000249_02900_d_0000009.jpg",
+    "class_name": "person",
+    "xyxy": [
+      594.0,
+      204.0,
+      596.0,
+      208.0
+    ],
+    "confidence": null,
+    "area_px2": 8.0,
+    "occlusion": 2,
+    "image": "09_fn_0000249_02900_d_0000009.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000269_00001_d_0000348",
+    "image_path": "data/raw/visdrone_det/val/images/0000269_00001_d_0000348.jpg",
+    "class_name": "person",
+    "xyxy": [
+      625.0,
+      168.0,
+      627.0,
+      172.0
+    ],
+    "confidence": null,
+    "area_px2": 8.0,
+    "occlusion": 1,
+    "image": "10_fn_0000269_00001_d_0000348.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000276_01801_d_0000516",
+    "image_path": "data/raw/visdrone_det/val/images/0000276_01801_d_0000516.jpg",
+    "class_name": "car",
+    "xyxy": [
+      695.0,
+      154.0,
+      699.0,
+      156.0
+    ],
+    "confidence": null,
+    "area_px2": 8.0,
+    "occlusion": 0,
+    "image": "11_fn_0000276_01801_d_0000516.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000276_01801_d_0000516",
+    "image_path": "data/raw/visdrone_det/val/images/0000276_01801_d_0000516.jpg",
+    "class_name": "car",
+    "xyxy": [
+      685.0,
+      147.0,
+      687.0,
+      151.0
+    ],
+    "confidence": null,
+    "area_px2": 8.0,
+    "occlusion": 0,
+    "image": "12_fn_0000276_01801_d_0000516.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000330_01601_d_0000808",
+    "image_path": "data/raw/visdrone_det/val/images/0000330_01601_d_0000808.jpg",
+    "class_name": "motor",
+    "xyxy": [
+      477.0,
+      58.0,
+      479.0,
+      62.0
+    ],
+    "confidence": null,
+    "area_px2": 8.0,
+    "occlusion": 0,
+    "image": "13_fn_0000330_01601_d_0000808.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000244_01000_d_0000003",
+    "image_path": "data/raw/visdrone_det/val/images/0000244_01000_d_0000003.jpg",
+    "class_name": "motor",
+    "xyxy": [
+      387.0,
+      12.0,
+      390.0,
+      15.0
+    ],
+    "confidence": null,
+    "area_px2": 9.0,
+    "occlusion": 1,
+    "image": "14_fn_0000244_01000_d_0000003.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000244_02000_d_0000005",
+    "image_path": "data/raw/visdrone_det/val/images/0000244_02000_d_0000005.jpg",
+    "class_name": "person",
+    "xyxy": [
+      427.0,
+      217.0,
+      430.0,
+      220.0
+    ],
+    "confidence": null,
+    "area_px2": 9.0,
+    "occlusion": 1,
+    "image": "15_fn_0000244_02000_d_0000005.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000244_03500_d_0000008",
+    "image_path": "data/raw/visdrone_det/val/images/0000244_03500_d_0000008.jpg",
+    "class_name": "car",
+    "xyxy": [
+      436.0,
+      203.0,
+      439.0,
+      206.0
+    ],
+    "confidence": null,
+    "area_px2": 9.0,
+    "occlusion": 1,
+    "image": "16_fn_0000244_03500_d_0000008.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000244_03500_d_0000008",
+    "image_path": "data/raw/visdrone_det/val/images/0000244_03500_d_0000008.jpg",
+    "class_name": "car",
+    "xyxy": [
+      441.0,
+      204.0,
+      444.0,
+      207.0
+    ],
+    "confidence": null,
+    "area_px2": 9.0,
+    "occlusion": 1,
+    "image": "17_fn_0000244_03500_d_0000008.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000291_00001_d_0000868",
+    "image_path": "data/raw/visdrone_det/val/images/0000291_00001_d_0000868.jpg",
+    "class_name": "car",
+    "xyxy": [
+      765.0,
+      426.0,
+      768.0,
+      429.0
+    ],
+    "confidence": null,
+    "area_px2": 9.0,
+    "occlusion": 0,
+    "image": "18_fn_0000291_00001_d_0000868.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000242_01912_d_0000008",
+    "image_path": "data/raw/visdrone_det/val/images/0000242_01912_d_0000008.jpg",
+    "class_name": "motor",
+    "xyxy": [
+      477.0,
+      225.0,
+      479.0,
+      230.0
+    ],
+    "confidence": null,
+    "area_px2": 10.0,
+    "occlusion": 1,
+    "image": "19_fn_0000242_01912_d_0000008.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000242_01912_d_0000008",
+    "image_path": "data/raw/visdrone_det/val/images/0000242_01912_d_0000008.jpg",
+    "class_name": "person",
+    "xyxy": [
+      477.0,
+      223.0,
+      479.0,
+      228.0
+    ],
+    "confidence": null,
+    "area_px2": 10.0,
+    "occlusion": 1,
+    "image": "20_fn_0000242_01912_d_0000008.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000242_05059_d_0000015",
+    "image_path": "data/raw/visdrone_det/val/images/0000242_05059_d_0000015.jpg",
+    "class_name": "motor",
+    "xyxy": [
+      450.0,
+      96.0,
+      452.0,
+      101.0
+    ],
+    "confidence": null,
+    "area_px2": 10.0,
+    "occlusion": 1,
+    "image": "21_fn_0000242_05059_d_0000015.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000242_05059_d_0000015",
+    "image_path": "data/raw/visdrone_det/val/images/0000242_05059_d_0000015.jpg",
+    "class_name": "person",
+    "xyxy": [
+      450.0,
+      95.0,
+      452.0,
+      100.0
+    ],
+    "confidence": null,
+    "area_px2": 10.0,
+    "occlusion": 1,
+    "image": "22_fn_0000242_05059_d_0000015.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000244_01000_d_0000003",
+    "image_path": "data/raw/visdrone_det/val/images/0000244_01000_d_0000003.jpg",
+    "class_name": "pedestrian",
+    "xyxy": [
+      395.0,
+      15.0,
+      397.0,
+      20.0
+    ],
+    "confidence": null,
+    "area_px2": 10.0,
+    "occlusion": 0,
+    "image": "23_fn_0000244_01000_d_0000003.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000277_00001_d_0000539",
+    "image_path": "data/raw/visdrone_det/val/images/0000277_00001_d_0000539.jpg",
+    "class_name": "motor",
+    "xyxy": [
+      1136.0,
+      471.0,
+      1138.0,
+      476.0
+    ],
+    "confidence": null,
+    "area_px2": 10.0,
+    "occlusion": 0,
+    "image": "24_fn_0000277_00001_d_0000539.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fn",
+    "original_id": "0000291_00001_d_0000868",
+    "image_path": "data/raw/visdrone_det/val/images/0000291_00001_d_0000868.jpg",
+    "class_name": "motor",
+    "xyxy": [
+      791.0,
+      474.0,
+      793.0,
+      479.0
+    ],
+    "confidence": null,
+    "area_px2": 10.0,
+    "occlusion": 1,
+    "image": "25_fn_0000291_00001_d_0000868.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000103_02964_d_0000030",
+    "image_path": "data/raw/visdrone_det/val/images/0000103_02964_d_0000030.jpg",
+    "class_name": "bus",
+    "xyxy": [
+      380.4544982910156,
+      0.0,
+      912.4305419921875,
+      165.9136505126953
+    ],
+    "confidence": 0.9843601584434509,
+    "area_px2": 88262.08739576256,
+    "occlusion": null,
+    "image": "26_fp_0000103_02964_d_0000030.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000360_03921_d_0000733",
+    "image_path": "data/raw/visdrone_det/val/images/0000360_03921_d_0000733.jpg",
+    "class_name": "car",
+    "xyxy": [
+      783.9645385742188,
+      318.0428161621094,
+      863.19580078125,
+      392.69854736328125
+    ],
+    "confidence": 0.9483671188354492,
+    "area_px2": 5915.067814057693,
+    "occlusion": null,
+    "image": "27_fp_0000360_03921_d_0000733.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000291_03601_d_0000886",
+    "image_path": "data/raw/visdrone_det/val/images/0000291_03601_d_0000886.jpg",
+    "class_name": "van",
+    "xyxy": [
+      328.2384338378906,
+      553.3818969726562,
+      486.9691162109375,
+      765.0
+    ],
+    "confidence": 0.9463360905647278,
+    "area_px2": 33590.28589602001,
+    "occlusion": null,
+    "image": "28_fp_0000291_03601_d_0000886.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000271_05401_d_0000399",
+    "image_path": "data/raw/visdrone_det/val/images/0000271_05401_d_0000399.jpg",
+    "class_name": "car",
+    "xyxy": [
+      1244.61767578125,
+      586.188232421875,
+      1358.927001953125,
+      726.4104614257812
+    ],
+    "confidence": 0.9389806389808655,
+    "area_px2": 16028.70851175487,
+    "occlusion": null,
+    "image": "29_fp_0000271_05401_d_0000399.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000289_03201_d_0000827",
+    "image_path": "data/raw/visdrone_det/val/images/0000289_03201_d_0000827.jpg",
+    "class_name": "car",
+    "xyxy": [
+      415.6044921875,
+      525.7622680664062,
+      489.5421447753906,
+      664.37255859375
+    ],
+    "confidence": 0.9352790117263794,
+    "area_px2": 10248.519506117329,
+    "occlusion": null,
+    "image": "30_fp_0000289_03201_d_0000827.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000289_03201_d_0000827",
+    "image_path": "data/raw/visdrone_det/val/images/0000289_03201_d_0000827.jpg",
+    "class_name": "car",
+    "xyxy": [
+      681.1687622070312,
+      672.45654296875,
+      763.2219848632812,
+      762.8623046875
+    ],
+    "confidence": 0.9347177147865295,
+    "area_px2": 7418.084095716476,
+    "occlusion": null,
+    "image": "31_fp_0000289_03201_d_0000827.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000356_02941_d_0000644",
+    "image_path": "data/raw/visdrone_det/val/images/0000356_02941_d_0000644.jpg",
+    "class_name": "car",
+    "xyxy": [
+      99.01497650146484,
+      620.3910522460938,
+      253.09133911132812,
+      720.2376708984375
+    ],
+    "confidence": 0.9337836503982544,
+    "area_px2": 15384.003820847254,
+    "occlusion": null,
+    "image": "32_fp_0000356_02941_d_0000644.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000249_00235_d_0000002",
+    "image_path": "data/raw/visdrone_det/val/images/0000249_00235_d_0000002.jpg",
+    "class_name": "car",
+    "xyxy": [
+      353.2113952636719,
+      410.6915588378906,
+      398.93731689453125,
+      465.7980651855469
+    ],
+    "confidence": 0.9328001141548157,
+    "area_px2": 2519.7957906033844,
+    "occlusion": null,
+    "image": "33_fp_0000249_00235_d_0000002.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000280_02401_d_0000624",
+    "image_path": "data/raw/visdrone_det/val/images/0000280_02401_d_0000624.jpg",
+    "class_name": "car",
+    "xyxy": [
+      432.1561279296875,
+      420.3077392578125,
+      496.23529052734375,
+      486.20068359375
+    ],
+    "confidence": 0.9295117259025574,
+    "area_px2": 4222.3646941408515,
+    "occlusion": null,
+    "image": "34_fp_0000280_02401_d_0000624.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000026_02500_d_0000029",
+    "image_path": "data/raw/visdrone_det/val/images/0000026_02500_d_0000029.jpg",
+    "class_name": "car",
+    "xyxy": [
+      1045.16259765625,
+      20.048786163330078,
+      1185.971435546875,
+      123.77297973632812
+    ],
+    "confidence": 0.9286018013954163,
+    "area_px2": 14605.28315815609,
+    "occlusion": null,
+    "image": "35_fp_0000026_02500_d_0000029.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000289_07001_d_0000846",
+    "image_path": "data/raw/visdrone_det/val/images/0000289_07001_d_0000846.jpg",
+    "class_name": "car",
+    "xyxy": [
+      265.1809997558594,
+      403.4226989746094,
+      355.1577453613281,
+      444.0462646484375
+    ],
+    "confidence": 0.9285315871238708,
+    "area_px2": 3655.176234221086,
+    "occlusion": null,
+    "image": "36_fp_0000289_07001_d_0000846.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000026_01500_d_0000027",
+    "image_path": "data/raw/visdrone_det/val/images/0000026_01500_d_0000027.jpg",
+    "class_name": "van",
+    "xyxy": [
+      646.0926513671875,
+      1.6397285461425781,
+      806.0453491210938,
+      106.66783142089844
+    ],
+    "confidence": 0.927927553653717,
+    "area_px2": 16799.528394791996,
+    "occlusion": null,
+    "image": "37_fp_0000026_01500_d_0000027.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000215_00000_d_0000256",
+    "image_path": "data/raw/visdrone_det/val/images/0000215_00000_d_0000256.jpg",
+    "class_name": "car",
+    "xyxy": [
+      884.69189453125,
+      295.03167724609375,
+      920.65869140625,
+      331.9263916015625
+    ],
+    "confidence": 0.9268749952316284,
+    "area_px2": 1326.984696984291,
+    "occlusion": null,
+    "image": "38_fp_0000215_00000_d_0000256.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000193_00000_d_0000103",
+    "image_path": "data/raw/visdrone_det/val/images/0000193_00000_d_0000103.jpg",
+    "class_name": "car",
+    "xyxy": [
+      762.0059204101562,
+      252.56515502929688,
+      812.830810546875,
+      278.1180725097656
+    ],
+    "confidence": 0.926332950592041,
+    "area_px2": 1298.7242236174643,
+    "occlusion": null,
+    "image": "39_fp_0000193_00000_d_0000103.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000335_06469_d_0000076",
+    "image_path": "data/raw/visdrone_det/val/images/0000335_06469_d_0000076.jpg",
+    "class_name": "car",
+    "xyxy": [
+      298.9418029785156,
+      261.89898681640625,
+      445.83111572265625,
+      347.6029968261719
+    ],
+    "confidence": 0.9247679710388184,
+    "area_px2": 12589.003129751422,
+    "occlusion": null,
+    "image": "40_fp_0000335_06469_d_0000076.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000263_02401_d_0000179",
+    "image_path": "data/raw/visdrone_det/val/images/0000263_02401_d_0000179.jpg",
+    "class_name": "car",
+    "xyxy": [
+      794.2990112304688,
+      387.9635925292969,
+      975.2364501953125,
+      478.8917236328125
+    ],
+    "confidence": 0.9245336055755615,
+    "area_px2": 16452.30317172967,
+    "occlusion": null,
+    "image": "41_fp_0000263_02401_d_0000179.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000356_01765_d_0000638",
+    "image_path": "data/raw/visdrone_det/val/images/0000356_01765_d_0000638.jpg",
+    "class_name": "van",
+    "xyxy": [
+      947.8037719726562,
+      634.9676513671875,
+      1077.88623046875,
+      747.2997436523438
+    ],
+    "confidence": 0.9239019155502319,
+    "area_px2": 14612.43473246321,
+    "occlusion": null,
+    "image": "42_fp_0000356_01765_d_0000638.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000194_00800_d_0000123",
+    "image_path": "data/raw/visdrone_det/val/images/0000194_00800_d_0000123.jpg",
+    "class_name": "car",
+    "xyxy": [
+      386.5476379394531,
+      292.4726257324219,
+      418.43499755859375,
+      333.922119140625
+    ],
+    "confidence": 0.9232872128486633,
+    "area_px2": 1321.7149023385718,
+    "occlusion": null,
+    "image": "43_fp_0000194_00800_d_0000123.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000271_05201_d_0000398",
+    "image_path": "data/raw/visdrone_det/val/images/0000271_05201_d_0000398.jpg",
+    "class_name": "car",
+    "xyxy": [
+      445.7678527832031,
+      374.7396240234375,
+      511.3882751464844,
+      455.5351257324219
+    ],
+    "confidence": 0.921600341796875,
+    "area_px2": 5301.834947196767,
+    "occlusion": null,
+    "image": "44_fp_0000271_05201_d_0000398.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000249_00603_d_0000003",
+    "image_path": "data/raw/visdrone_det/val/images/0000249_00603_d_0000003.jpg",
+    "class_name": "car",
+    "xyxy": [
+      511.5207824707031,
+      424.69573974609375,
+      544.6062622070312,
+      472.36285400390625
+    ],
+    "confidence": 0.9181503057479858,
+    "area_px2": 1577.089342866093,
+    "occlusion": null,
+    "image": "45_fp_0000249_00603_d_0000003.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000360_03333_d_0000730",
+    "image_path": "data/raw/visdrone_det/val/images/0000360_03333_d_0000730.jpg",
+    "class_name": "car",
+    "xyxy": [
+      665.2260131835938,
+      620.1234130859375,
+      764.1185302734375,
+      764.0781860351562
+    ],
+    "confidence": 0.917101263999939,
+    "area_px2": 14236.049844045192,
+    "occlusion": null,
+    "image": "46_fp_0000360_03333_d_0000730.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000215_00000_d_0000256",
+    "image_path": "data/raw/visdrone_det/val/images/0000215_00000_d_0000256.jpg",
+    "class_name": "car",
+    "xyxy": [
+      969.1346435546875,
+      660.4103393554688,
+      1046.567138671875,
+      760.2797241210938
+    ],
+    "confidence": 0.916185200214386,
+    "area_px2": 7733.1356482207775,
+    "occlusion": null,
+    "image": "47_fp_0000215_00000_d_0000256.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000359_03529_d_0000712",
+    "image_path": "data/raw/visdrone_det/val/images/0000359_03529_d_0000712.jpg",
+    "class_name": "car",
+    "xyxy": [
+      569.9356079101562,
+      130.57131958007812,
+      654.588134765625,
+      249.4351043701172
+    ],
+    "confidence": 0.9114103317260742,
+    "area_px2": 10062.11973408144,
+    "occlusion": null,
+    "image": "48_fp_0000359_03529_d_0000712.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000215_00447_d_0000257",
+    "image_path": "data/raw/visdrone_det/val/images/0000215_00447_d_0000257.jpg",
+    "class_name": "van",
+    "xyxy": [
+      59.388206481933594,
+      317.3664855957031,
+      157.1666259765625,
+      375.1718444824219
+    ],
+    "confidence": 0.9108025431632996,
+    "area_px2": 5652.116630263161,
+    "occlusion": null,
+    "image": "49_fp_0000215_00447_d_0000257.jpg",
+    "status": "pending",
+    "cause": ""
+  },
+  {
+    "kind": "fp",
+    "original_id": "0000277_02401_d_0000551",
+    "image_path": "data/raw/visdrone_det/val/images/0000277_02401_d_0000551.jpg",
+    "class_name": "van",
+    "xyxy": [
+      627.828857421875,
+      251.48390197753906,
+      741.8699951171875,
+      340.4874267578125
+    ],
+    "confidence": 0.910619854927063,
+    "area_px2": 10150.063224835321,
+    "occlusion": null,
+    "image": "50_fp_0000277_02401_d_0000551.jpg",
+    "status": "pending",
+    "cause": ""
+  }
+]

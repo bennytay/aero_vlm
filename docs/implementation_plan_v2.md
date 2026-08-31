@@ -140,6 +140,11 @@ resize.
 9. Inspect at least 25 false negatives and 25 false positives before changing
    the architecture.
 
+If automatic batch-size profiling cannot complete on the target GPU, select and
+record a fixed batch using a controlled one-epoch capacity probe. The selected
+batch must complete without CUDA OOM retries; this changes the training policy,
+not the architecture, classes, data split, or augmentation policy.
+
 Start with native classes. Do not merge `pedestrian` and `person` until a report
 shows that the benchmark distinction hurts the intended mission.
 

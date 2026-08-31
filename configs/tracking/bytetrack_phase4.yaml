@@ -1,0 +1,12 @@
+name: bytetrack_phase4
+tracker_type: bytetrack
+high_confidence_threshold: 0.5
+low_confidence_threshold: 0.1
+new_track_threshold: 0.6
+match_iou_threshold: 0.3
+low_match_iou_threshold: 0.2
+max_time_since_update_frames: 30
+min_hits: 1
+camera_motion_compensation: false
+reid_enabled: false
+source_fps: 30.0

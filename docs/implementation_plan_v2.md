@@ -153,6 +153,12 @@ shows that the benchmark distinction hurts the intended mission.
 
 ## Phase 4: add tracking offline
 
+**Status:** complete on 31 August 2026. The sequence-separated VisDrone-MOT
+experiment selected BoT-SORT with camera-motion compensation and ReID disabled
+after a development-only comparison (HOTA 0.4136 vs ByteTrack 0.3566). Its
+single held-out score was HOTA 0.4076 and IDF1 0.8591; see
+`evaluation/experiments/exp_20260831_phase4_tracking/`.
+
 **Purpose:** turn independent boxes into trajectories with stable IDs.
 
 1. Run the detector on VisDrone-MOT validation sequences.

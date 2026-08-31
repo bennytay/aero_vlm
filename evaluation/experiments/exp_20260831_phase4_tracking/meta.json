@@ -1,0 +1,38 @@
+{
+  "experiment_id": "exp_20260831_phase4_tracking",
+  "question": "Does a sequence-separated offline tracker provide stable IDs on VisDrone-MOT without tuning on its held-out sequences?",
+  "checkpoint": {
+    "path": "evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts/train/weights/best.pt",
+    "sha256": "sha256:7468c1bcdc4b8e22e57f3d6a356c79fa786bacdc14f9e19d8fe7ac4993a62871"
+  },
+  "input_size_px": 640,
+  "precision": "fp32",
+  "dataset": "VisDrone2019-MOT official validation split",
+  "development_sequences": [
+    "uav0000086_00000_v",
+    "uav0000117_02622_v",
+    "uav0000137_00458_v"
+  ],
+  "held_out_sequences": [
+    "uav0000182_00000_v",
+    "uav0000268_05773_v",
+    "uav0000305_00000_v",
+    "uav0000339_00001_v"
+  ],
+  "selection_rule": "Choose ByteTrack unless BoT-SORT improves development HOTA by at least 0.03; score the chosen configuration once on held-out sequences.",
+  "selected_tracker": "botsort_phase4_no_reid_cmc",
+  "external_artefacts": {
+    "development_bytetrack_metrics": {
+      "path": "evaluation/experiments/exp_20260831_phase4_tracking/artefacts/development_bytetrack/metrics.json",
+      "sha256": "b36537522fb4e72802acfeddd583f3093009ecf1f75dcd5438cb2e6d9d053305"
+    },
+    "development_botsort_metrics": {
+      "path": "evaluation/experiments/exp_20260831_phase4_tracking/artefacts/development_botsort/metrics.json",
+      "sha256": "c9d4e6a0fd14c61e7f08c55e2915712beea0ddcb8fd4eb74af6a6869c06dca5e"
+    },
+    "held_out_botsort_metrics": {
+      "path": "evaluation/experiments/exp_20260831_phase4_tracking/artefacts/held_out_botsort/metrics.json",
+      "sha256": "e0e39d5c796c3c7e6e5dd360f550bd5489dbee922539f76edac73d0c59fc64c4"
+    }
+  }
+}

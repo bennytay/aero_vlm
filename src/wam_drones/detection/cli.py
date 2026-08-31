@@ -27,6 +27,15 @@ from wam_drones.detection.phase3 import (
     train_phase3,
     write_manual_review_pack,
 )
+from wam_drones.detection.vocabulary import DetectionLabel
+from wam_drones.tracking.offline import (
+    GroundTruth,
+    OfflineTracker,
+    TrackingDetection,
+    evaluate_tracking,
+    load_tracker_config,
+    mot_lines,
+)
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
@@ -286,6 +295,189 @@ def run_phase3_train(args: argparse.Namespace, _config: DetectorModelConfig) -> 
     return 0
 
 
+def _phase4_protocol(path: Path) -> dict[str, tuple[str, ...]]:
+    import yaml
+
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("Phase 4 protocol must be a YAML mapping")
+    development = tuple(payload.get("development_sequences", ()))
+    held_out = tuple(payload.get("held_out_sequences", ()))
+    if not development or not held_out or set(development) & set(held_out):
+        raise ValueError("Phase 4 protocol must contain disjoint non-empty splits")
+    return {"development": development, "held_out": held_out}
+
+
+def run_phase4_evaluate(args: argparse.Namespace, _config: DetectorModelConfig) -> int:
+    """Run a native-class checkpoint over original VisDrone-MOT frames offline."""
+    try:
+        cv2 = import_module("cv2")
+        ultralytics = import_module("ultralytics")
+    except ImportError as error:
+        raise RuntimeError("run `uv sync --group detection` for Phase 4") from error
+    from wam_drones.dataset.visdrone_mot import (
+        VisDroneMotBox,
+        parse_visdrone_mot_annotation,
+    )
+
+    protocol = _phase4_protocol(args.protocol)
+    selected = protocol[args.partition]
+    available = {
+        path.name for path in (args.source_dir / "sequences").iterdir() if path.is_dir()
+    }
+    missing = set(selected) - available
+    if missing:
+        raise ValueError(
+            f"source directory is missing protocol sequences: {sorted(missing)}"
+        )
+    tracker = OfflineTracker(load_tracker_config(args.tracker_config))
+    model = ultralytics.YOLO(str(args.checkpoint))
+    names = tuple(DetectionLabel(name) for name in model.names.values())
+    if len(names) != 10:
+        raise ValueError("Phase 4 checkpoint must use the ten native VisDrone classes")
+    output_dir: Path = args.output_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
+    detector_ns = tracker_ns = 0
+    all_ground_truth: dict[int, tuple[GroundTruth, ...]] = {}
+    all_tracks = {}
+    all_camera_motion: dict[int, float] = {}
+    predictions_jsonl: list[str] = []
+    sequence_metrics: dict[str, object] = {}
+    frame_offset = 0
+    for sequence_index, sequence_id in enumerate(selected):
+        sequence = args.source_dir / "sequences" / sequence_id
+        annotation_path = args.source_dir / "annotations" / f"{sequence_id}.txt"
+        gt_by_frame: dict[int, list[VisDroneMotBox]] = {}
+        for box in parse_visdrone_mot_annotation(
+            annotation_path.read_text(encoding="utf-8")
+        ):
+            if not box.is_trainable:
+                continue
+            # dimensions are read just below, avoiding rounded image-space boxes.
+            gt_by_frame.setdefault(box.frame_index, []).append(box)
+        sequence_frames = sorted(sequence.glob("*.jpg"))
+        local_ground_truth: dict[int, tuple[GroundTruth, ...]] = {}
+        local_tracks = {}
+        local_camera_motion: dict[int, float] = {}
+        mot_output: list[str] = []
+        for local_index, image_path in enumerate(sequence_frames):
+            if args.frame_limit is not None and local_index >= args.frame_limit:
+                break
+            image = cv2.imread(str(image_path))
+            if image is None:
+                raise ValueError(f"cannot decode image: {image_path}")
+            height, width = image.shape[:2]
+            frame_number = int(image_path.stem)
+            captured_ns = int(
+                (frame_number - 1) * 1_000_000_000 / tracker.config.source_fps
+            )
+            started = __import__("time").monotonic_ns()
+            result = model.predict(
+                image,
+                conf=args.confidence,
+                imgsz=args.input_size,
+                device=args.device,
+                verbose=False,
+            )[0]
+            detector_ns += __import__("time").monotonic_ns() - started
+            detections = []
+            if result.boxes is not None:
+                for xyxy, confidence, class_id in zip(
+                    result.boxes.xyxy.cpu().tolist(),
+                    result.boxes.conf.cpu().tolist(),
+                    result.boxes.cls.cpu().tolist(),
+                    strict=True,
+                ):
+                    label = names[int(class_id)]
+                    detections.append(
+                        TrackingDetection(
+                            label,
+                            float(confidence),
+                            (
+                                xyxy[0] / width,
+                                xyxy[1] / height,
+                                xyxy[2] / width,
+                                xyxy[3] / height,
+                            ),
+                        )
+                    )
+            global_frame = frame_offset + local_index
+            tracker_started = __import__("time").monotonic_ns()
+            tracks = tracker.update(
+                detections, frame_id=global_frame, captured_at_monotonic_ns=captured_ns
+            )
+            tracker_ns += __import__("time").monotonic_ns() - tracker_started
+            local_tracks[global_frame] = tracks
+            local_camera_motion[global_frame] = tracker.last_camera_motion_norm
+            predictions_jsonl.append(tracks.model_dump_json())
+            mot_output.extend(mot_lines((tracks,), width, height))
+            local_ground_truth[global_frame] = tuple(
+                GroundTruth(
+                    global_frame,
+                    sequence_index * 1_000_000 + item.target_id,
+                    DetectionLabel(list(DetectionLabel)[item.category - 1].value),
+                    (
+                        item.bbox_xyxy_px[0] / width,
+                        item.bbox_xyxy_px[1] / height,
+                        item.bbox_xyxy_px[2] / width,
+                        item.bbox_xyxy_px[3] / height,
+                    ),
+                    item.occlusion,
+                )
+                for item in gt_by_frame.get(frame_number, [])
+            )
+            # Tracker IDs are sequence-local by design. Offset only the
+            # aggregate evaluation view so IDs from separate videos cannot
+            # create false cross-sequence associations.
+            all_tracks[global_frame] = tracks.model_copy(
+                update={
+                    "tracks": tuple(
+                        track.model_copy(
+                            update={
+                                "track_id": sequence_index * 1_000_000 + track.track_id
+                            }
+                        )
+                        for track in tracks.tracks
+                    )
+                }
+            )
+            all_camera_motion[global_frame] = tracker.last_camera_motion_norm
+        (output_dir / f"{sequence_id}.txt").write_text(
+            "\n".join(mot_output) + ("\n" if mot_output else ""), encoding="utf-8"
+        )
+        all_ground_truth.update(local_ground_truth)
+        sequence_metrics[sequence_id] = evaluate_tracking(
+            local_ground_truth,
+            local_tracks,
+            camera_motion_by_frame=local_camera_motion,
+        )
+        frame_offset += len(sequence_frames) + 1
+        tracker = OfflineTracker(tracker.config)  # identities must never span videos
+    (output_dir / "tracks.jsonl").write_text(
+        "\n".join(predictions_jsonl) + ("\n" if predictions_jsonl else ""),
+        encoding="utf-8",
+    )
+    metrics = evaluate_tracking(
+        all_ground_truth,
+        all_tracks,
+        camera_motion_by_frame=all_camera_motion,
+    )
+    metrics["latency"] = {
+        "detector_ms": detector_ns / 1_000_000,
+        "tracker_ms": tracker_ns / 1_000_000,
+        "frames": len(all_tracks),
+        "mean_detector_ms_per_frame": detector_ns / max(len(all_tracks), 1) / 1_000_000,
+        "mean_tracker_ms_per_frame": tracker_ns / max(len(all_tracks), 1) / 1_000_000,
+    }
+    metrics["partition"] = args.partition
+    metrics["sequences"] = sequence_metrics
+    (output_dir / "metrics.json").write_text(
+        json.dumps(metrics, indent=2) + "\n", encoding="utf-8"
+    )
+    print(json.dumps(metrics, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     root = repository_root()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -424,6 +616,37 @@ def build_parser() -> argparse.ArgumentParser:
     )
     phase3_train.add_argument("--device", default="cpu")
     phase3_train.set_defaults(handler=run_phase3_train)
+
+    phase4 = subparsers.add_parser(
+        "phase4-evaluate",
+        help="run offline tracker on the sequence-separated VisDrone-MOT protocol",
+    )
+    phase4.add_argument("--checkpoint", type=Path, required=True)
+    phase4.add_argument(
+        "--source-dir",
+        type=Path,
+        required=True,
+        help="extracted VisDrone2019-MOT-val directory",
+    )
+    phase4.add_argument(
+        "--tracker-config",
+        type=Path,
+        default=root / "configs" / "tracking" / "bytetrack_phase4.yaml",
+    )
+    phase4.add_argument(
+        "--protocol",
+        type=Path,
+        default=root / "configs" / "tracking" / "phase4_protocol.yaml",
+    )
+    phase4.add_argument(
+        "--partition", choices=["development", "held_out"], required=True
+    )
+    phase4.add_argument("--output-dir", type=Path, required=True)
+    phase4.add_argument("--input-size", type=int, default=640)
+    phase4.add_argument("--confidence", type=float, default=0.001)
+    phase4.add_argument("--device", default="cpu")
+    phase4.add_argument("--frame-limit", type=int)
+    phase4.set_defaults(handler=run_phase4_evaluate)
     return parser
 
 

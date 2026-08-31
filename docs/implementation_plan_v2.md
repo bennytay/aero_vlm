@@ -11,12 +11,12 @@ flowchart TD
     A["Public model smoke test"] --> B["Public aerial data manifests"]
     B --> C["Fine-tuned detector"]
     C --> D["Offline multi-object tracker"]
-    D --> E["Resolution and tiling ablations"]
-    E --> F["INT8 Hailo export"]
-    F --> G["Live camera bench test"]
-    G --> H["Powered payload test"]
+    D --> E["Desktop resolution/cadence/tiling ablations"]
+    E --> F["MaixCAM2 export and INT8 parity"]
+    F --> G["MaixCAM2 live-camera bench test"]
+    G --> H["7-inch payload safety ladder"]
     H --> I["Piloted onboard flight"]
-    I --> J["Cost-down experiment"]
+    I --> J["Optional reference comparison"]
 ```
 
 Each step produces an experiment record and has a stop/go gate. Later work does
@@ -125,6 +125,11 @@ resize.
 
 ## Phase 3: fine-tune the detector
 
+**Status:** complete on 31 August 2026. The recorded fine-tuned checkpoint
+beats the public YOLO26n baseline on the sequence-safe VisDrone score
+(`mAP50-95` 0.1676 vs 0.0449, with AP-small improved for every native class); see
+`evaluation/experiments/exp_20260831_phase3_visdrone_det/`.
+
 **Purpose:** establish the aerial-domain detector before optimising hardware.
 
 1. Start from the public COCO-pretrained YOLO26n weights.
@@ -182,17 +187,20 @@ used as the score.
 
 ## Phase 5: find the efficient operating point
 
+**Status:** planned. The pre-registered matrix and desktop utilities are
+checked in under `configs/experiments/phase5_efficiency.yaml` and
+`evaluation/experiments/exp_20260901_phase5_efficiency/`, but no Phase 5 run
+or MaixCAM2 measurement has been completed.
 
 **Purpose:** identify accuracy-qualified operating candidates without making
 small targets disappear. This phase does **not** select the final onboard
-profile: an RTX 3070 cannot predict Raspberry Pi/Hailo latency, power,
-thermals, memory pressure, or export compatibility.
+profile: a desktop GPU cannot predict MaixCAM2 latency, power, thermals,
+memory pressure, or export compatibility.
 
 Use the desktop GPU only to measure detector/tracker quality trade-offs and to
 discard clearly unacceptable configurations. In Phase 6, export the surviving
-candidates and benchmark their complete pipeline on the Raspberry Pi 5 (4GB)
-plus AI HAT+ 13 TOPS (Hailo-8L) target. Only those target measurements select
-the actual onboard quality and low-power profiles.
+candidates and benchmark their complete pipeline on MaixCAM2. Only those target
+measurements select the actual onboard quality and low-power profiles.
 
 Run a controlled matrix using the same checkpoint and validation sequences:
 
@@ -223,33 +231,32 @@ the complete pipeline on the target hardware.
 
 ## Phase 6: export to the flight target
 
-**Purpose:** benchmark Phase 5's accuracy-qualified candidates on the Raspberry
-Pi 5 (4GB) plus AI HAT+ 13 TOPS (Hailo-8L), then select the real onboard
-profiles.
+**Purpose:** export Phase 5's accuracy-qualified candidates to MaixCAM2 and
+measure INT8 parity before committing to the live-camera pipeline.
 
 1. Freeze the checkpoint, class order, and preprocessing for each candidate.
-2. Export each candidate to ONNX with a static batch-one input.
-3. Compile to HEF/target-native format using representative aerial calibration
-   images for INT8.
-4. Compare desktop FP32, exported ONNX, Hailo emulator where available, and
-   real AI HAT+ 13 TOPS INT8 output on the same fixtures.
+2. Export static batch-one ONNX with opset 17, `dynamic=False`, and the fixed
+   selected input size.
+3. Compile ONNX through Pulsar2 or MaixHub to a `.mud` and `.axmodel`, using
+   20–100 representative aerial crops for INT8 calibration.
+4. Compare desktop FP32, ONNX, and MaixCAM2 INT8 output on the same fixtures.
 5. Match boxes by class and IoU; report score drift, missing boxes, extra boxes,
    and mAP loss after quantisation.
-6. Use a known-good Hailo application pipeline first, then replace only the
-   application-specific pieces.
-7. Pin OS image, HailoRT, driver, compiler, model, and application versions.
+6. Adapt MaixPy detector objects into the existing Detection and FrameDetections
+   contracts; retain the project BoT-SORT + CMC tracker with ReID disabled.
+7. Pin MaixPy, Pulsar2/MaixHub, model, calibration set, and converter versions.
 
 **Gate:** select the onboard quality and low-power profiles from true target
 measurements; INT8 accuracy loss is understood, output contracts match, and
-the native device runs 1000 consecutive images without a leak or crash.
+the MaixCAM2 device runs 1000 consecutive images without a leak or crash.
 
 ## Phase 7: build the live camera pipeline
 
-**Purpose:** make latency bounded and measurable.
+**Purpose:** make the MaixCAM2 live-camera pipeline bounded and measurable.
 
 Implement four bounded stages:
 
-1. **Capture:** hardware camera timestamps frames and writes only the newest
+1. **Capture:** MaixCAM2 camera timestamps frames and writes only the newest
    frame into a one-slot queue.
 2. **Inference:** preprocessing and accelerator execution consume the latest
    available frame.
@@ -274,23 +281,22 @@ Run:
 
 ## Phase 8: put it on the aircraft safely
 
-**Purpose:** demonstrate onboard perception during real flight without giving
-it control authority.
+**Purpose:** demonstrate MaixCAM2 onboard perception on a self-assembled
+approximately 7-inch quadcopter without giving it control authority.
 
-1. Choose an aircraft with a measured payload margin for the computer, camera,
-   mount, cooling, cables, and regulator.
-2. Weigh every added component and record centre-of-gravity change.
-3. Power the companion computer through a separately fused, regulated supply.
-4. Build a vibration-isolated camera mount with an unobstructed propeller view.
-5. Complete a powered prop-off test, then a restrained or prop-safe vibration
-   test where locally permitted.
-6. Verify normal RC control, arming checks, failsafes, and return-to-home without
-   the perception application running.
-7. Run a short piloted hover with onboard recording only.
-8. Run a three-minute piloted collection flight over a controlled scene with
-   consenting participants and known vehicles/bicycles.
-9. Synchronise flight and perception logs after landing.
-10. Manually annotate a representative sample and report in-domain failures.
+1. Finish and hover-tune the airframe with **no payload**.
+2. Weigh the empty and payload-on aircraft and record centre-of-gravity shift.
+3. Feed MaixCAM2 from the flight LiPo through its own fused 5 V BEC; do not
+   share a thin flight-controller 5 V rail.
+4. Fit an isolated nadir/belly mount clear of propeller disks.
+5. Complete a powered props-off test with MaixCAM2 running.
+6. Complete a restrained or prop-safe vibration test where locally permitted.
+7. Verify RC, arming, failsafes, and return-to-home with the perception app
+   running but with no control authority.
+8. Run a short piloted hover with logging only.
+9. Run an approximately three-minute piloted collection over a controlled scene
+   with consenting people and vehicles.
+10. Synchronise logs after landing and spot-annotate in-domain failures.
 
 Do not stream high-bitrate video unless it is needed for supervision. Do not
 connect perception output to guided modes in this phase.
@@ -299,23 +305,21 @@ connect perception output to guided modes in this phase.
 complete, aircraft behaviour remains normal, and detections/tracks can be
 verified against the recorded camera stream.
 
-## Phase 9: cost down after it works
+## Phase 9: optional reference-platform comparison
 
-**Purpose:** answer the original low-cost research question with evidence.
+**Purpose:** compare the completed MaixCAM2 flight target with a Pi/Hailo,
+Luckfox, or desktop INT8 reference only if that comparison answers a new
+question. It is not a flight-MVP gate.
 
-1. Port the frozen model and a minimal tracker to MaixCAM2 if its toolchain can
-   compile the selected operators.
-2. If not, train/export the closest vendor-supported nano detector at the same
-   input sizes.
-3. Repeat the exact validation clips and full-pipeline measurements.
-4. Compare Raspberry Pi/Hailo, MaixCAM2, and an optional desktop/Jetson upper
-   bound on:
+1. Repeat the exact validation clips and full-pipeline measurements on an
+   optional reference platform.
+2. Compare MaixCAM2 with Pi/Hailo, Luckfox, or desktop/Jetson as applicable on:
    accuracy, HOTA/IDF1, p95 latency, power, mass, cost, temperature, and setup
    effort.
-5. Report capability lost per dollar, watt, and gram saved.
+3. Report capability gained or lost per dollar, watt, and gram.
 
-**Gate:** call the cheaper target a success only if it completes the same
-onboard pipeline and satisfies the published MVP floors.
+**Gate:** no gate for the flight MVP; retain the comparison only if its protocol
+and platform differences are explicit.
 
 ## Test plan
 
@@ -327,7 +331,7 @@ Integration tests cover:
 
 - public checkpoint download/hash and one-image inference;
 - PyTorch to ONNX parity;
-- ONNX/native-device parity;
+- ONNX/MaixCAM2 `.axmodel` parity;
 - sequence reader to detection to tracker to JSONL;
 - bounded-queue behaviour under overload;
 - process restart and partial-log recovery; and
@@ -345,23 +349,23 @@ Use these names when work begins; the actual date replaces `YYYYMMDD`:
 2. `exp_YYYYMMDD_visdrone_yolo26n_640`
 3. `exp_YYYYMMDD_tracker_baselines`
 4. `exp_YYYYMMDD_resolution_cadence_tiles`
-5. `exp_YYYYMMDD_hailo_int8_parity`
-6. `exp_YYYYMMDD_live_camera_sustained`
-7. `exp_YYYYMMDD_onboard_flight_v1`
-8. `exp_YYYYMMDD_cost_down_maixcam2`
+5. `exp_YYYYMMDD_maixcam2_axmodel_parity`
+6. `exp_YYYYMMDD_maixcam2_live_camera_sustained`
+7. `exp_YYYYMMDD_7inch_onboard_flight_v1`
+8. `exp_YYYYMMDD_reference_hailo_or_desktop`
 
 ## Stop conditions
 
-- If the public model cannot be exported to the intended accelerator after
-  three documented attempts, switch to the compatibility model rather than
-  rewriting the runtime.
+- If YOLO26n cannot compile through Pulsar2/MaixHub after three documented
+  attempts, switch to YOLO11n at the same input sizes rather than rewriting the
+  runtime around a broken compile.
 - If 640-pixel inference misses the speed floor, reduce detector cadence before
   reducing resolution; tiny-object information is expensive to recover after
   it is discarded.
 - If INT8 causes unacceptable small-object loss, try better representative
   calibration and quantisation-aware training before changing hardware.
-- If the companion payload or power system degrades stable manual flight, stop
-  flight work and change the aircraft or payload.
+- If the payload, mount, or dedicated power system degrades stable manual
+  flight, stop flight work and change the aircraft or payload.
 - If tracking metrics are poor but detection is sound, diagnose camera motion
   and association thresholds before training another detector.
 

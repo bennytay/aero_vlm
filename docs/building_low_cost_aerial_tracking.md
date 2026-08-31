@@ -160,12 +160,13 @@ toolchain connects the entire path needed for this MVP:
 - multi-object trackers;
 - static ONNX export;
 - INT8 calibration;
-- direct Hailo and Rockchip export paths; and
+- static ONNX export and MaixCAM2 conversion paths; and
 - end-to-end detection outputs that reduce post-processing work.
 
 The package version and model hash will be frozen. If YOLO26n fails to compile
-reliably for Hailo, YOLO11n is the fallback. A model that is two points better
-on a paper but cannot run on the aircraft is not better for this project.
+through Pulsar2/MaixHub after three documented attempts, YOLO11n is the
+fallback at the same input size. A model that is two points better on a paper
+but cannot run on the aircraft is not better for this project.
 
 ## What current research contributes
 
@@ -202,32 +203,28 @@ An ESP32-class microcontroller is attractive because it is cheap and low power,
 but it does not provide a credible first target for a multi-scale detector
 operating on enough pixels to see distant aerial objects.
 
-The first credible flight target is a Raspberry Pi 5 with 4GB RAM paired with a
-Raspberry Pi AI HAT+ 13 TOPS (Hailo-8L, INT8). This costs and weighs more than
-a microcontroller, but it has three decisive advantages:
+The flight target is MaixCAM2 (Axera AX630C), carried as the perception payload
+on a self-assembled approximately 7-inch quadcopter. It integrates the camera,
+Linux system, NPU, storage, and M12 lens, which avoids treating a separate
+companion computer and CSI camera as the aircraft default. The flight
+controller still flies the aircraft; MaixCAM2 only perceives and logs.
 
-1. mature camera and Linux tooling;
-2. a public accelerator stack with ready detection, tiling, camera, and video
-   pipelines; and
-3. a direct route from a trained public model to an INT8 executable.
+This target has three decisive advantages:
 
-The first goal is to make the whole system work and measure it. The cost-down
-candidate is MaixCAM2, which combines a camera interface, two application CPU
-cores, hardware video codecs, and a vendor-rated 3.2 TOPS INT8 accelerator. Its
-integrated design could be smaller and cheaper, but vendor model-only speed is
-not the speed of capture, preprocessing, inference, tracking, logging, and
-preview together. It must repeat the same experiment before it can replace the
-working target.
+1. one physical camera/NPU/Linux payload to power and mount;
+2. a direct static-ONNX-to-INT8 `.axmodel` path; and
+3. a small enough package to measure on the aircraft before adding other
+   compute boards.
 
-This two-target strategy avoids two common traps. It does not abandon the cost
-goal, and it does not let an immature low-cost toolchain prevent the first real
-flight result.
+Pi/Hailo, Luckfox, and desktop INT8 systems are optional reference platforms
+after the MaixCAM2 flight path works. Vendor model-only throughput remains a
+hint, not a capture-to-track-result measurement.
 
 ## How the software will fit together
 
 ```mermaid
 flowchart LR
-    A["CSI camera"] --> B["One-slot latest-frame buffer"]
+    A["MaixCAM2 camera"] --> B["One-slot latest-frame buffer"]
     B --> C["Resize and normalise"]
     C --> D["INT8 nano detector"]
     D --> E["Restore boxes to camera coordinates"]
@@ -320,12 +317,12 @@ The shortest working sequence is:
    accuracy/speed operating point.
 7. export and calibrate the detector to INT8, then compare boxes against the
    desktop model.
-8. Build the bounded live-camera pipeline on Raspberry Pi/Hailo and run
-   sustained thermal and power tests.
-9. Mount the payload on a suitable drone and complete a short, piloted,
+8. Export to MaixCAM2 INT8 `.axmodel`, compare boxes against the desktop model,
+   and run its bounded live-camera pipeline.
+9. Complete the 7-inch payload safety ladder, then a short piloted,
    recording-only flight.
-10. Port the exact benchmark to MaixCAM2 and report how much capability is lost
-    for each dollar, watt, and gram saved.
+10. Optionally repeat the benchmark on Pi/Hailo, Luckfox, or desktop INT8 as a
+    reference comparison.
 
 The detailed gates and test cases live in
 [`implementation_plan_v2.md`](implementation_plan_v2.md).
@@ -367,6 +364,4 @@ output is a measured efficiency frontier rather than a single attractive demo.
 - [EDNet: edge-optimised small-target detection in UAV imagery](https://arxiv.org/abs/2501.05885)
 - [Ultralytics object-tracking documentation](https://docs.ultralytics.com/modes/track/)
 - [Ultralytics export and INT8 documentation](https://docs.ultralytics.com/modes/export/)
-- [Hailo applications](https://github.com/hailo-ai/hailo-apps)
-- [Hailo Model Zoo](https://github.com/hailo-ai/hailo_model_zoo)
 - [MaixCAM2 specifications](https://wiki.sipeed.com/hardware/en/maixcam/maixcam2.html)

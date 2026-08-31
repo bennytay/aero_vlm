@@ -1,7 +1,7 @@
 # µAeroTrack
 
 µAeroTrack is a low-cost onboard aerial object-detection and multi-object
-tracking project. A companion computer processes the drone's live camera stream,
+tracking project. A perception payload processes the drone's live camera stream,
 assigns boxes and stable track IDs, and records results while an independent
 flight controller remains responsible for stabilisation, motors, pilot input,
 and failsafes.
@@ -14,15 +14,17 @@ commands to the flight controller.
 - [Project brief](docs/project_brief_v2.md)
 - [Step-by-step implementation plan](docs/implementation_plan_v2.md)
 - [First-principles article](docs/building_low_cost_aerial_tracking.md)
+- [Flight hardware and integration](hardware/README.md)
+- [MaixCAM2 export contract](docs/maixcam2_export.md)
 
 ## Planned technical baseline
 
 - VisDrone detection and tracking categories
 - COCO-pretrained YOLO26n, with YOLO11n as a compatibility fallback
 - ByteTrack baseline and a camera-motion-compensated tracker comparison
-- Raspberry Pi 5 (4GB) plus AI HAT+ 13 TOPS (Hailo-8L) as the first flight
-  target
-- MaixCAM2 as the later cost-down target
+- MaixCAM2 (Axera AX630C) as the onboard perception-and-logging payload
+- self-assembled approximately 7-inch quadcopter; the flight controller flies
+- Pi/Hailo or desktop INT8 only as an optional reference platform
 - INT8 inference, bounded latest-frame capture, and selective small-object tiling
 
 ## Development setup
@@ -112,13 +114,16 @@ uv run wam-dataset validate-splits \
 uv run wam-dataset report --manifest data/manifests/visdrone_det_val_v1.json
 ```
 
-Phase 3 is implemented but has not yet been run end-to-end. Its preparation
-command keeps the raw official splits immutable while excluding the documented
-DET-train/DET-val near-duplicate validation image from the primary score. It
-uses 640px aspect-ratio-preserving letterboxing, deterministic training, native
-VisDrone classes, and produces class-level AP-small/precision/recall/FP-per-
-frame plus size, density, occlusion, and scene breakdowns. It also generates a
-required 25 false-negative + 25 false-positive human review pack:
+Phase 3 is complete. Its sequence-safe fine-tuned checkpoint beat the untouched
+public YOLO26n baseline on `mAP50-95` and small-object recall; the full record
+is in [`exp_20260831_phase3_visdrone_det`](evaluation/experiments/exp_20260831_phase3_visdrone_det/report.md).
+The preparation command keeps raw official splits immutable while excluding the
+documented DET-train/DET-val near-duplicate validation image from the primary
+score. It uses 640px aspect-ratio-preserving letterboxing, deterministic
+training, native VisDrone classes, and produces class-level
+AP-small/precision/recall/FP-per-frame plus size, density, occlusion, and scene
+breakdowns. It also generates a required 25 false-negative + 25 false-positive
+human review pack:
 
 On the validated 8 GB RTX 3070 host, the Phase 3 configuration uses fixed
 `batch: 8`. Ultralytics AutoBatch profiling terminated before selecting a batch;
@@ -144,5 +149,8 @@ uv run wam-detect phase3-evaluate \
   --output-dir evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts/finetuned
 ```
 
-The manual-review packs begin in a pending state and must be completed before
-considering an architecture change.
+The recorded Phase 3 manual-review packs were completed before retaining the
+architecture. Phase 4 is also complete: BoT-SORT with camera-motion
+compensation and ReID disabled was selected on development data, then scored
+once on held-out VisDrone-MOT sequences (HOTA 0.4076; IDF1 0.8591). See
+[`exp_20260831_phase4_tracking`](evaluation/experiments/exp_20260831_phase4_tracking/report.md).

@@ -1,8 +1,9 @@
 # Project brief v2: low-cost aerial detection and tracking
 
 **Working name:** µAeroTrack  
-**Status:** Phase 0 foundation complete; public detector work is next
-**Date:** 31 August 2026  
+**Status:** Phases 0–4 complete; MaixCAM2 deployment and flight work remain
+planned
+**Date:** 1 September 2026
 
 ## One-sentence brief
 
@@ -99,13 +100,14 @@ path.
 
 Start with a nano-sized public YOLO checkpoint, currently **YOLO26n**, and
 fine-tune it on VisDrone at 640 pixels. It is chosen because the current public
-toolchain supports training, tracking, ONNX export, Hailo export, INT8
+toolchain supports training, tracking, static ONNX export, MaixCAM2 conversion,
+INT8
 calibration, and an end-to-end output format. The exact package and checkpoint
 hash will be pinned because these interfaces change.
 
-If YOLO26n cannot compile or meet accuracy on the selected Hailo runtime,
-YOLO11n is the compatibility fallback. A more specialised research detector is
-an ablation, not a prerequisite for the MVP.
+If YOLO26n cannot compile through Pulsar2/MaixHub after three documented
+attempts, YOLO11n is the compatibility fallback at the same input sizes. A more
+specialised research detector is an ablation, not a prerequisite for the MVP.
 
 ### Tracker
 
@@ -122,25 +124,17 @@ it adds another neural network and a significant compute cost.
 
 ### Edge hardware
 
-The **working flight target** is a Raspberry Pi 5 with **4GB RAM** and a
-**Raspberry Pi AI HAT+ 13 TOPS** (Hailo-8L, INT8), plus a CSI camera, storage,
-and a regulated 5 V supply. The 4GB board is the budget baseline for a lean,
-headless camera/tracker/logging pipeline; 2GB is not an accepted target. The
-AI HAT+ 13 TOPS is the budget accelerator baseline. This is not the absolute
-cheapest board, but it is the cheapest current route with a mature public
-camera pipeline, supported model exports, precompiled models, tiling examples,
-and enough community evidence to make “must work” credible.
+The **working flight target** is MaixCAM2 (Axera AX630C): one compact unit with
+camera, Linux, NPU, storage, and an M12 lens. It is the perception-and-logging
+payload on a self-assembled approximately 7-inch quadcopter, not a flight
+computer. The flight controller (a standard Pixhawk-class or SpeedyBee-class
+stack running ArduPilot or PX4) retains all flight authority.
 
-The **cost-down candidate** is MaixCAM2. It integrates a camera interface,
-Linux, hardware video codecs, and a vendor-rated 3.2 TOPS INT8 accelerator in a
-small package. The vendor reports high YOLO11n throughput, but that is a
-model-only vendor benchmark and does not establish our full aerial pipeline.
-Availability and model-conversion maturity make it a second target, not the
-critical path.
-
-An NVIDIA Jetson is an optional upper-bound reference only. The ESP32-P4 is no
-longer the deployment target; it can remain a later extreme-compression
-experiment.
+MaixCAM2 is powered from the flight LiPo through a dedicated fused 5 V BEC; it
+does not share a thin flight-controller 5 V rail. The first mount is isolated,
+nadir/belly facing, and clear of propeller disks. A Pi/Hailo or desktop INT8
+system may be measured later as an optional reference platform, not as an MVP
+gate.
 
 ## Public data and public models
 
@@ -156,8 +150,8 @@ still be recorded so a later public release can audit what may be redistributed.
   weather, and occlusion attributes.
 - **COCO-pretrained YOLO weights** provide the initial visual features instead
   of training from random weights.
-- **Hailo Model Zoo artefacts** provide known-good conversion and runtime
-  references where a matching network is available.
+- **MaixCAM2 conversion artefacts** provide the target `.mud`/`.axmodel` path;
+  any Pi/Hailo artefacts are optional reference material only.
 - A small amount of footage from the actual camera and lens is reserved for the
   final domain test. It is never mixed into the public validation score.
 
@@ -174,6 +168,8 @@ The MVP applies optimisations in an evidence-first order:
 4. Compile to the accelerator's native INT8 format with representative aerial
    calibration images.
 5. Measure 640 and 512/480/416/320 input sizes instead of assuming 640 is best.
+   If 640 misses the speed floor, reduce detector cadence before reducing
+   resolution; lost small-object pixels cannot be recovered downstream.
 6. Run the detector at a measured rate and use a Kalman tracker to maintain
    tracks between detector updates.
 7. Test scheduled or uncertainty-triggered 2x2 sliced inference for tiny
@@ -251,6 +247,4 @@ pipeline boundary, and test duration.
 - [EDNet: edge-optimised UAV small-target detection](https://arxiv.org/abs/2501.05885)
 - [Ultralytics tracking documentation](https://docs.ultralytics.com/modes/track/)
 - [Ultralytics export and quantisation documentation](https://docs.ultralytics.com/modes/export/)
-- [Hailo applications and camera pipelines](https://github.com/hailo-ai/hailo-apps)
-- [Hailo Model Zoo](https://github.com/hailo-ai/hailo_model_zoo)
 - [MaixCAM2 official specifications](https://wiki.sipeed.com/hardware/en/maixcam/maixcam2.html)

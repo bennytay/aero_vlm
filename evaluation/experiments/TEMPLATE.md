@@ -14,7 +14,9 @@ State the expected measurable result before running the experiment.
 - Model/config hash:
 - Dataset manifest hash:
 - Hardware revision:
+- Deployment device and payload configuration:
 - Model format:
+- Converter/runtime versions and calibration-set hash:
 - Input size in pixels:
 - Numeric precision:
 - Measured pipeline boundary:

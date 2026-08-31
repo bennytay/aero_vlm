@@ -4,17 +4,19 @@ Fill this inventory by photographing and physically inspecting the bench; do
 not infer owned hardware from chat. Record exact part numbers and revisions,
 weigh flight-bound items, and retain evidence before ordering duplicates.
 
-## Planned budget flight-compute baseline
+## Planned flight-compute baseline
 
 This is an intended purchase/configuration, not an assertion of owned hardware:
 
 | Component | Selected baseline | Notes |
 |---|---|---|
-| Companion computer | Raspberry Pi 5, 4GB RAM | Lean headless camera/tracker/logging pipeline; 2GB is out of scope. |
-| AI accelerator | Raspberry Pi AI HAT+ 13 TOPS (Hailo-8L, INT8) | Budget vision-inference target for Phase 6. |
-| Cooling | Raspberry Pi Active Cooler | Required for sustained benchmark and flight thermal testing. |
-| Bench power | Official Raspberry Pi 27W USB-C power supply | Bench-only reference supply; flight regulator is separately specified and tested. |
-| Initial storage | 64–128GB high-endurance microSD | Upgrade only after measured video/log retention requires it. |
+| Airframe | Self-assembled approximately 7-inch quadcopter | Complete and hover-tune without the perception payload first. |
+| Flight controller | Pixhawk-class or SpeedyBee-class stack | ArduPilot or PX4 flies; payload has no control authority. |
+| Perception payload | MaixCAM2 (Axera AX630C) | Integrated camera, Linux, NPU, storage, M12 lens, and 1/4-20 mount. |
+| Payload allowance | Approximately 150–250 g all-up | Measure MaixCAM2, mount, BEC, wiring, and storage before flight. |
+| Payload power | Dedicated fused 5 V BEC from flight LiPo | Do not share a thin FC 5 V rail. |
+| Mount | Rubber-ball isolated nadir/belly mount | Keep clear of propeller disks and record centre-of-gravity shift. |
+| Display | Optional | Strip or disable for flight unless measurements justify it. |
 
 | Item category | Owned exact item | Quantity | Condition | Measured mass | Interfaces/accessories | Evidence/action |
 |---|---|---:|---|---:|---|---|

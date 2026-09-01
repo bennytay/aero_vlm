@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Sequence
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from importlib import import_module
 from pathlib import Path
 from typing import Any
@@ -795,6 +795,175 @@ def run_phase5_evaluate(args: argparse.Namespace, _config: DetectorModelConfig) 
     return 0
 
 
+def _draw_demo_overlay(
+    image: Any,
+    tracks: Any,
+    *,
+    frame_index: int,
+    pipeline_ms: float,
+    detector_ran: bool,
+) -> None:
+    """Draw presentation metadata without changing tracking or evaluation output."""
+    cv2 = import_module("cv2")
+    height, width = image.shape[:2]
+    cv2.rectangle(image, (0, 0), (width, 52), (16, 16, 16), -1)
+    fps = 1_000.0 / pipeline_ms if pipeline_ms > 0 else 0.0
+    status = "FRESH DETECTION" if detector_ran else "TRACK PROPAGATION"
+    cv2.putText(
+        image,
+        f"uAeroTrack  |  {status}  |  {pipeline_ms:.1f} ms  |  {fps:.1f} FPS",
+        (12, 22),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.52,
+        (255, 255, 255),
+        1,
+    )
+    cv2.putText(
+        image,
+        f"frame {frame_index}  |  native VisDrone classes  |  desktop prototype",
+        (12, 43),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.42,
+        (190, 190, 190),
+        1,
+    )
+    for track in tracks.tracks:
+        x1, y1, x2, y2 = track.bbox_norm_xyxy
+        color = (0, 220, 0) if track.observed_this_frame else (0, 165, 255)
+        left, top = round(x1 * width), round(y1 * height)
+        right, bottom = round(x2 * width), round(y2 * height)
+        cv2.rectangle(image, (left, top), (right, bottom), color, 2)
+        state = "fresh" if track.observed_this_frame else "propagated"
+        label = f"{track.label.value} {track.confidence:.2f}  #{track.track_id} {state}"
+        text_top = max(68, top - 6)
+        cv2.putText(
+            image,
+            label,
+            (left, text_top),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.48,
+            color,
+            2,
+        )
+
+
+def run_demo_video(args: argparse.Namespace, _config: DetectorModelConfig) -> int:
+    """Render a shareable native-model demo from user-supplied video footage."""
+    if args.source.suffix.lower() not in VIDEO_EXTENSIONS:
+        raise ValueError(f"demo source must be a video file: {args.source}")
+    if not args.source.is_file():
+        raise ValueError(f"demo source does not exist: {args.source}")
+    if args.output.suffix.lower() != ".mp4":
+        raise ValueError("demo output must use an .mp4 extension")
+    try:
+        cv2 = import_module("cv2")
+        ultralytics = import_module("ultralytics")
+    except ImportError as error:
+        raise RuntimeError(
+            "run `uv sync --group detection` for demo rendering"
+        ) from error
+
+    model = ultralytics.YOLO(str(args.checkpoint))
+    names = tuple(DetectionLabel(name) for name in model.names.values())
+    if len(names) != len(DetectionLabel):
+        raise ValueError("demo checkpoint must use the ten native VisDrone classes")
+    capture = cv2.VideoCapture(str(args.source))
+    if not capture.isOpened():
+        raise ValueError(f"cannot open demo source: {args.source}")
+    reported_fps = float(capture.get(cv2.CAP_PROP_FPS))
+    source_fps = reported_fps if reported_fps > 0 else 30.0
+    tracker_config = replace(
+        load_tracker_config(args.tracker_config), source_fps=source_fps
+    )
+    tracker = OfflineTracker(tracker_config)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    tracks_output = args.output.with_suffix(".tracks.jsonl")
+    metrics_output = args.output.with_suffix(".metrics.json")
+    writer = None
+    frame_index = 0
+    timings_ms: list[float] = []
+    tracks_jsonl: list[str] = []
+    try:
+        while args.frame_limit is None or frame_index < args.frame_limit:
+            ok, image = capture.read()
+            if not ok:
+                break
+            height, width = image.shape[:2]
+            started_ns = __import__("time").monotonic_ns()
+            detector_ran = detector_runs(frame_index, args.detector_cadence)
+            detections: tuple[TrackingDetection, ...] = ()
+            if detector_ran:
+                detections = _phase5_detections(
+                    model,
+                    image,
+                    names=names,
+                    width=width,
+                    height=height,
+                    input_size=args.input_size,
+                    confidence=args.confidence,
+                    device=args.device,
+                    half=False,
+                )
+            captured_ns = round(frame_index * 1_000_000_000 / source_fps)
+            tracks = tracker.update(
+                detections,
+                frame_id=frame_index,
+                captured_at_monotonic_ns=captured_ns,
+            )
+            pipeline_ms = (
+                __import__("time").monotonic_ns() - started_ns
+            ) / 1_000_000
+            _draw_demo_overlay(
+                image,
+                tracks,
+                frame_index=frame_index,
+                pipeline_ms=pipeline_ms,
+                detector_ran=detector_ran,
+            )
+            if writer is None:
+                writer = cv2.VideoWriter(
+                    str(args.output),
+                    cv2.VideoWriter_fourcc(*"mp4v"),
+                    source_fps,
+                    (width, height),
+                )
+                if not writer.isOpened():
+                    raise RuntimeError(f"cannot open demo output: {args.output}")
+            writer.write(image)
+            timings_ms.append(pipeline_ms)
+            tracks_jsonl.append(tracks.model_dump_json())
+            frame_index += 1
+    finally:
+        capture.release()
+        if writer is not None:
+            writer.release()
+    if not timings_ms:
+        raise ValueError(f"demo source contains no frames: {args.source}")
+    tracks_output.write_text("\n".join(tracks_jsonl) + "\n", encoding="utf-8")
+    metrics_output.write_text(
+        json.dumps(
+            {
+                "source": str(args.source),
+                "frames": frame_index,
+                "source_fps": source_fps,
+                "mean_pipeline_ms": sum(timings_ms) / len(timings_ms),
+                "p95_pipeline_ms": sorted(timings_ms)[
+                    max(0, round(0.95 * len(timings_ms)) - 1)
+                ],
+                "detector_cadence_frames": args.detector_cadence,
+                "input_size_px": args.input_size,
+                "confidence": args.confidence,
+                "tracker_config": str(args.tracker_config),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    print(args.output)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     root = repository_root()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -1016,6 +1185,36 @@ def build_parser() -> argparse.ArgumentParser:
     phase5.add_argument("--device", default="cpu")
     phase5.add_argument("--frame-limit", type=int)
     phase5.set_defaults(handler=run_phase5_evaluate)
+
+    demo = subparsers.add_parser(
+        "demo-video",
+        help="render native detector and tracker overlays on a personal video",
+    )
+    demo.add_argument("source", type=Path, help="input MP4, MOV, AVI, MKV, or WebM")
+    demo.add_argument("--output", type=Path, required=True, help="annotated MP4")
+    demo.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=root
+        / "evaluation"
+        / "experiments"
+        / "exp_20260831_phase3_visdrone_det"
+        / "artefacts"
+        / "train"
+        / "weights"
+        / "best.pt",
+    )
+    demo.add_argument(
+        "--tracker-config",
+        type=Path,
+        default=root / "configs" / "tracking" / "botsort_phase4.yaml",
+    )
+    demo.add_argument("--input-size", type=int, default=640)
+    demo.add_argument("--confidence", type=float, default=0.25)
+    demo.add_argument("--detector-cadence", type=int, default=1)
+    demo.add_argument("--device", default="cpu")
+    demo.add_argument("--frame-limit", type=int)
+    demo.set_defaults(handler=run_demo_video)
     return parser
 
 

@@ -163,3 +163,21 @@ limits of the desktop measurement are in
 [`exp_20260901_phase5_efficiency`](evaluation/experiments/exp_20260901_phase5_efficiency/report.md).
 Phase 6 must still establish ONNX/INT8 parity and complete-pipeline power and
 latency on MaixCAM2 before selecting an onboard profile.
+
+## Render a demo video
+
+Render a personal video with the fine-tuned native-class detector and
+BoT-SORT overlays. The resulting MP4 shows each track's class, confidence,
+track ID, and whether the box is a fresh detection or tracker propagation;
+adjacent JSONL and metrics files retain the underlying output and timing.
+
+```shell
+uv sync --group detection
+uv run wam-detect demo-video path/to/my-footage.mp4 \
+  --output runs/demo/my-footage_annotated.mp4 \
+  --device 0
+```
+
+This is a presentation renderer, not an evaluation command. Describe public
+or personal source footage accurately when sharing it, and do not present its
+desktop timing overlay as an onboard performance claim.

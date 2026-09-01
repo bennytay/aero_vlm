@@ -32,3 +32,17 @@ def test_cli_accepts_folder_video_export_and_parity_commands(tmp_path: Path) -> 
         ]
     )
     assert evaluate.model_kind == "native"
+
+    demo = parser.parse_args(
+        [
+            "demo-video",
+            "my-footage.mov",
+            "--output",
+            str(tmp_path / "demo.mp4"),
+            "--detector-cadence",
+            "2",
+        ]
+    )
+    assert demo.source == Path("my-footage.mov")
+    assert demo.output == tmp_path / "demo.mp4"
+    assert demo.detector_cadence == 2

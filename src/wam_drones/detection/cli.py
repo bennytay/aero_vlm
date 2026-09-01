@@ -7,6 +7,7 @@ import json
 from collections.abc import Sequence
 from dataclasses import asdict, replace
 from importlib import import_module
+from math import hypot
 from pathlib import Path
 from typing import Any
 
@@ -847,6 +848,53 @@ def _draw_demo_overlay(
         )
 
 
+def _demo_tile_boxes(tiling_mode: str) -> tuple[tuple[float, float, float, float], ...]:
+    """Return overlap-preserving tiles for an offline presentation render."""
+    if tiling_mode == "2x2":
+        return tile_boxes_2x2(0.20)
+    if tiling_mode == "3x3":
+        # Each 40%-of-frame crop overlaps its neighbour by 10% of the full
+        # frame, keeping objects on a crop edge visible in both detections.
+        return tuple(
+            (left, top, left + 0.40, top + 0.40)
+            for top in (0.0, 0.30, 0.60)
+            for left in (0.0, 0.30, 0.60)
+        )
+    return ()
+
+
+def _visible_demo_tracks(
+    tracks: Any,
+    history: dict[int, list[tuple[float, float]]],
+    *,
+    image_width_px: int,
+    image_height_px: int,
+    min_motion_px: float,
+) -> Any:
+    """Hide unconfirmed or static tracks from a presentation-only overlay."""
+    visible = []
+    for track in tracks.tracks:
+        x1, y1, x2, y2 = track.bbox_norm_xyxy
+        centre = ((x1 + x2) / 2, (y1 + y2) / 2)
+        positions = history.setdefault(track.track_id, [])
+        positions.append(centre)
+        if len(positions) > 12:
+            positions.pop(0)
+        if track.hits < 3:
+            continue
+        if track.label in {DetectionLabel.BICYCLE, DetectionLabel.MOTOR}:
+            visible.append(track)
+            continue
+        origin = positions[0]
+        moved_px = hypot(
+            (centre[0] - origin[0]) * image_width_px,
+            (centre[1] - origin[1]) * image_height_px,
+        )
+        if moved_px >= min_motion_px:
+            visible.append(track)
+    return tracks.model_copy(update={"tracks": tuple(visible)})
+
+
 def run_demo_video(args: argparse.Namespace, _config: DetectorModelConfig) -> int:
     """Render a shareable native-model demo from user-supplied video footage."""
     if args.source.suffix.lower() not in VIDEO_EXTENSIONS:
@@ -883,6 +931,7 @@ def run_demo_video(args: argparse.Namespace, _config: DetectorModelConfig) -> in
     frame_index = 0
     timings_ms: list[float] = []
     tracks_jsonl: list[str] = []
+    track_history: dict[int, list[tuple[float, float]]] = {}
     try:
         while args.frame_limit is None or frame_index < args.frame_limit:
             ok, image = capture.read()
@@ -893,7 +942,7 @@ def run_demo_video(args: argparse.Namespace, _config: DetectorModelConfig) -> in
             detector_ran = detector_runs(frame_index, args.detector_cadence)
             detections: tuple[TrackingDetection, ...] = ()
             if detector_ran:
-                detections = _phase5_detections(
+                full_frame = _phase5_detections(
                     model,
                     image,
                     names=names,
@@ -904,18 +953,47 @@ def run_demo_video(args: argparse.Namespace, _config: DetectorModelConfig) -> in
                     device=args.device,
                     half=False,
                 )
+                if args.tiling_mode != "off":
+                    tile_detections = tuple(
+                        detection
+                        for tile in _demo_tile_boxes(args.tiling_mode)
+                        for detection in _phase5_detections(
+                            model,
+                            image,
+                            names=names,
+                            width=width,
+                            height=height,
+                            input_size=args.input_size,
+                            confidence=args.confidence,
+                            device=args.device,
+                            half=False,
+                            tile=tile,
+                        )
+                    )
+                    detections = merge_full_frame_and_tile_detections(
+                        (*full_frame, *tile_detections)
+                    )
+                else:
+                    detections = full_frame
             captured_ns = round(frame_index * 1_000_000_000 / source_fps)
             tracks = tracker.update(
                 detections,
                 frame_id=frame_index,
                 captured_at_monotonic_ns=captured_ns,
             )
+            visible_tracks = _visible_demo_tracks(
+                tracks,
+                track_history,
+                image_width_px=width,
+                image_height_px=height,
+                min_motion_px=args.min_confirmed_motion_px,
+            )
             pipeline_ms = (
                 __import__("time").monotonic_ns() - started_ns
             ) / 1_000_000
             _draw_demo_overlay(
                 image,
-                tracks,
+                visible_tracks,
                 frame_index=frame_index,
                 pipeline_ms=pipeline_ms,
                 detector_ran=detector_ran,
@@ -931,7 +1009,7 @@ def run_demo_video(args: argparse.Namespace, _config: DetectorModelConfig) -> in
                     raise RuntimeError(f"cannot open demo output: {args.output}")
             writer.write(image)
             timings_ms.append(pipeline_ms)
-            tracks_jsonl.append(tracks.model_dump_json())
+            tracks_jsonl.append(visible_tracks.model_dump_json())
             frame_index += 1
     finally:
         capture.release()
@@ -951,8 +1029,10 @@ def run_demo_video(args: argparse.Namespace, _config: DetectorModelConfig) -> in
                     max(0, round(0.95 * len(timings_ms)) - 1)
                 ],
                 "detector_cadence_frames": args.detector_cadence,
+                "tiling_mode": args.tiling_mode,
                 "input_size_px": args.input_size,
                 "confidence": args.confidence,
+                "min_confirmed_motion_px": args.min_confirmed_motion_px,
                 "tracker_config": str(args.tracker_config),
             },
             indent=2,
@@ -1212,6 +1292,18 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument("--input-size", type=int, default=640)
     demo.add_argument("--confidence", type=float, default=0.25)
     demo.add_argument("--detector-cadence", type=int, default=1)
+    demo.add_argument(
+        "--min-confirmed-motion-px",
+        type=float,
+        default=12.0,
+        help="hide tracks until they have moved this far in the source frame",
+    )
+    demo.add_argument(
+        "--tiling-mode",
+        choices=["off", "2x2", "3x3"],
+        default="off",
+        help="run overlapping crops as well as full-frame inference",
+    )
     demo.add_argument("--device", default="cpu")
     demo.add_argument("--frame-limit", type=int)
     demo.set_defaults(handler=run_demo_video)

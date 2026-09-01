@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from dataclasses import asdict
 from importlib import import_module
 from pathlib import Path
+from typing import Any
 
 from wam_drones.detection.checkpoint import ensure_checkpoint
 from wam_drones.detection.export import export_onnx
@@ -28,6 +29,16 @@ from wam_drones.detection.phase3 import (
     write_manual_review_pack,
 )
 from wam_drones.detection.vocabulary import DetectionLabel
+from wam_drones.tracking.efficiency import (
+    detector_runs,
+    has_confident_small_detection,
+    load_efficiency_protocol,
+    merge_full_frame_and_tile_detections,
+    should_run_tiles,
+    tile_boxes_2x2,
+    tile_detection_to_full_frame,
+    validate_efficiency_profile,
+)
 from wam_drones.tracking.offline import (
     GroundTruth,
     OfflineTracker,
@@ -478,6 +489,312 @@ def run_phase4_evaluate(args: argparse.Namespace, _config: DetectorModelConfig) 
     return 0
 
 
+def _phase5_detections(
+    model: Any,
+    image: Any,
+    *,
+    names: tuple[DetectionLabel, ...],
+    width: int,
+    height: int,
+    input_size: int,
+    confidence: float,
+    device: str,
+    half: bool,
+    tile: tuple[float, float, float, float] | None = None,
+) -> tuple[TrackingDetection, ...]:
+    """Run one backend inference and return boxes in original-frame coordinates."""
+    if tile is not None:
+        tx1, ty1, tx2, ty2 = tile
+        x1, x2 = round(tx1 * width), round(tx2 * width)
+        y1, y2 = round(ty1 * height), round(ty2 * height)
+        image = image[y1:y2, x1:x2]
+        height, width = image.shape[:2]
+    prediction_options: dict[str, Any] = {
+        "conf": confidence,
+        "imgsz": input_size,
+        "device": device,
+        "verbose": False,
+    }
+    if half:
+        prediction_options["half"] = True
+    result = model.predict(image, **prediction_options)[0]
+    detections: list[TrackingDetection] = []
+    if result.boxes is not None:
+        for xyxy, score, class_id in zip(
+            result.boxes.xyxy.cpu().tolist(),
+            result.boxes.conf.cpu().tolist(),
+            result.boxes.cls.cpu().tolist(),
+            strict=True,
+        ):
+            detection = TrackingDetection(
+                names[int(class_id)],
+                float(score),
+                (xyxy[0] / width, xyxy[1] / height, xyxy[2] / width, xyxy[3] / height),
+            )
+            detections.append(
+                tile_detection_to_full_frame(detection, tile)
+                if tile is not None
+                else detection
+            )
+    return tuple(detections)
+
+
+def _write_phase5_preview(image: Any, tracks: Any, writer: Any) -> None:
+    """Encode a deliberately simple preview inside the measured boundary."""
+    cv2 = import_module("cv2")
+    height, width = image.shape[:2]
+    for track in tracks.tracks:
+        x1, y1, x2, y2 = track.bbox_norm_xyxy
+        cv2.rectangle(
+            image,
+            (round(x1 * width), round(y1 * height)),
+            (round(x2 * width), round(y2 * height)),
+            (0, 255, 0) if track.observed_this_frame else (0, 165, 255),
+            1,
+        )
+        cv2.putText(
+            image,
+            str(track.track_id),
+            (round(x1 * width), max(12, round(y1 * height) - 2)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (255, 255, 255),
+            1,
+        )
+    writer.write(image)
+
+
+def run_phase5_evaluate(args: argparse.Namespace, _config: DetectorModelConfig) -> int:
+    """Measure one pre-registered Phase 5 development profile end to end."""
+    try:
+        cv2 = import_module("cv2")
+        ultralytics = import_module("ultralytics")
+    except ImportError as error:
+        raise RuntimeError("run `uv sync --group detection` for Phase 5") from error
+    from wam_drones.dataset.visdrone_mot import (
+        VisDroneMotBox,
+        parse_visdrone_mot_annotation,
+    )
+
+    protocol = load_efficiency_protocol(args.protocol)
+    policy = next(
+        (item for item in protocol.tiling_policies if item.mode == args.tiling_mode),
+        None,
+    )
+    if policy is None:
+        raise ValueError(
+            f"tiling mode is not in the Phase 5 matrix: {args.tiling_mode}"
+        )
+    try:
+        tracker_config = args.tracker_config.relative_to(repository_root()).as_posix()
+    except ValueError:
+        tracker_config = args.tracker_config.as_posix()
+    validate_efficiency_profile(
+        protocol,
+        input_size_px=args.input_size,
+        precision=args.precision,
+        detector_cadence_frames=args.detector_cadence,
+        tiling_policy=policy,
+        tracker_config=tracker_config,
+        preview=args.preview,
+    )
+    if args.precision == "int8":
+        raise ValueError(
+            "the PyTorch Phase 5 backend cannot measure INT8; use a target-native "
+            "backend in Phase 6"
+        )
+    if args.partition == "held_out":
+        if args.selection_record is None or not args.selection_record.is_file():
+            raise ValueError(
+                "held-out Phase 5 evaluation requires a frozen selection record"
+            )
+        selected_sequences = protocol.held_out_sequences
+    else:
+        selected_sequences = protocol.development_sequences
+    expected = set(selected_sequences)
+    available = {
+        path.name for path in (args.source_dir / "sequences").iterdir() if path.is_dir()
+    }
+    missing = expected - available
+    if missing:
+        raise ValueError(
+            f"source directory is missing development sequences: {sorted(missing)}"
+        )
+    model = ultralytics.YOLO(str(args.checkpoint))
+    names = tuple(DetectionLabel(name) for name in model.names.values())
+    if len(names) != 10:
+        raise ValueError("Phase 5 checkpoint must use the ten native VisDrone classes")
+    output_dir: Path = args.output_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
+    tracker = OfflineTracker(load_tracker_config(args.tracker_config))
+    all_ground_truth: dict[int, tuple[GroundTruth, ...]] = {}
+    all_tracks = {}
+    all_camera_motion: dict[int, float] = {}
+    timings: list[dict[str, str | bool | int | float]] = []
+    tracks_jsonl: list[str] = []
+    sequence_metrics: dict[str, object] = {}
+    frame_offset = 0
+    half = args.precision == "fp16"
+    for sequence_index, sequence_id in enumerate(selected_sequences):
+        sequence_dir = args.source_dir / "sequences" / sequence_id
+        annotation_path = args.source_dir / "annotations" / f"{sequence_id}.txt"
+        gt_by_frame: dict[int, list[VisDroneMotBox]] = {}
+        for box in parse_visdrone_mot_annotation(
+            annotation_path.read_text(encoding="utf-8")
+        ):
+            if box.is_trainable:
+                gt_by_frame.setdefault(box.frame_index, []).append(box)
+        local_ground_truth: dict[int, tuple[GroundTruth, ...]] = {}
+        local_tracks = {}
+        local_camera_motion: dict[int, float] = {}
+        writer = None
+        last_confident_small_frame: int | None = None
+        mot_output: list[str] = []
+        image_paths = sorted(sequence_dir.glob("*.jpg"))
+        for local_index, image_path in enumerate(image_paths):
+            if args.frame_limit is not None and local_index >= args.frame_limit:
+                break
+            pipeline_started_ns = __import__("time").monotonic_ns()
+            image = cv2.imread(str(image_path))
+            if image is None:
+                raise ValueError(f"cannot decode image: {image_path}")
+            height, width = image.shape[:2]
+            frame_number = int(image_path.stem)
+            captured_ns = int((frame_number - 1) * 1_000_000_000 / protocol.source_fps)
+            detector_started_ns = __import__("time").monotonic_ns()
+            fresh_detection = detector_runs(local_index, args.detector_cadence)
+            tile_count = 0
+            detections: tuple[TrackingDetection, ...] = ()
+            if fresh_detection:
+                full_frame = _phase5_detections(
+                    model, image, names=names, width=width, height=height,
+                    input_size=args.input_size, confidence=args.confidence,
+                    device=args.device, half=half,
+                )
+                if has_confident_small_detection(full_frame, policy):
+                    last_confident_small_frame = local_index
+                detections = full_frame
+                if should_run_tiles(
+                    policy,
+                    frame_index=local_index,
+                    last_confident_small_detection_frame=last_confident_small_frame,
+                ):
+                    tile_count = 4
+                    tiles = tuple(
+                        detection
+                        for tile in tile_boxes_2x2(policy.overlap_fraction)
+                        for detection in _phase5_detections(
+                            model, image, names=names, width=width, height=height,
+                            input_size=args.input_size, confidence=args.confidence,
+                            device=args.device, half=half, tile=tile,
+                        )
+                    )
+                    detections = merge_full_frame_and_tile_detections(
+                        (*full_frame, *tiles)
+                    )
+            detector_ns = __import__("time").monotonic_ns() - detector_started_ns
+            tracker_started_ns = __import__("time").monotonic_ns()
+            global_frame = frame_offset + local_index
+            tracks = tracker.update(
+                detections, frame_id=global_frame, captured_at_monotonic_ns=captured_ns
+            )
+            tracker_ns = __import__("time").monotonic_ns() - tracker_started_ns
+            if args.preview:
+                if writer is None:
+                    writer = cv2.VideoWriter(
+                        str(output_dir / f"{sequence_id}_preview.mp4"),
+                        cv2.VideoWriter_fourcc(*"mp4v"),
+                        protocol.source_fps,
+                        (width, height),
+                    )
+                    if not writer.isOpened():
+                        raise RuntimeError("failed to open Phase 5 preview writer")
+                _write_phase5_preview(image, tracks, writer)
+            pipeline_ns = __import__("time").monotonic_ns() - pipeline_started_ns
+            timings.append({
+                "sequence_id": sequence_id, "frame_number": frame_number,
+                "fresh_detection": fresh_detection, "tile_count": tile_count,
+                "detector_ms": detector_ns / 1_000_000,
+                "tracker_ms": tracker_ns / 1_000_000,
+                "pipeline_ms": pipeline_ns / 1_000_000,
+            })
+            local_tracks[global_frame] = tracks
+            local_camera_motion[global_frame] = tracker.last_camera_motion_norm
+            tracks_jsonl.append(tracks.model_dump_json())
+            mot_output.extend(mot_lines((tracks,), width, height))
+            local_ground_truth[global_frame] = tuple(
+                GroundTruth(
+                    global_frame, sequence_index * 1_000_000 + item.target_id,
+                    DetectionLabel(list(DetectionLabel)[item.category - 1].value),
+                    tuple(value / divisor for value, divisor in zip(
+                        item.bbox_xyxy_px, (width, height, width, height), strict=True
+                    )), item.occlusion,
+                )
+                for item in gt_by_frame.get(frame_number, [])
+            )
+            all_tracks[global_frame] = tracks.model_copy(
+                update={
+                    "tracks": tuple(
+                        track.model_copy(
+                            update={
+                                "track_id": sequence_index * 1_000_000
+                                + track.track_id
+                            }
+                        )
+                        for track in tracks.tracks
+                    )
+                }
+            )
+            all_camera_motion[global_frame] = tracker.last_camera_motion_norm
+        if writer is not None:
+            writer.release()
+        (output_dir / f"{sequence_id}.txt").write_text(
+            "\n".join(mot_output) + ("\n" if mot_output else ""), encoding="utf-8"
+        )
+        all_ground_truth.update(local_ground_truth)
+        sequence_metrics[sequence_id] = evaluate_tracking(
+            local_ground_truth, local_tracks, camera_motion_by_frame=local_camera_motion
+        )
+        frame_offset += len(image_paths) + 1
+        tracker = OfflineTracker(tracker.config)
+    metrics = evaluate_tracking(
+        all_ground_truth, all_tracks, camera_motion_by_frame=all_camera_motion
+    )
+    pipeline_values = [float(item["pipeline_ms"]) for item in timings]
+    metrics["profile"] = {
+        "input_size_px": args.input_size, "precision": args.precision,
+        "detector_cadence_frames": args.detector_cadence, "tiling_mode": policy.mode,
+        "tracker_config": tracker_config, "preview": args.preview,
+    }
+    metrics["partition"] = args.partition
+    metrics["latency"] = {
+        "frames": len(timings),
+        "mean_pipeline_ms_per_frame": sum(pipeline_values)
+        / max(len(pipeline_values), 1),
+        "mean_detector_ms_per_frame": sum(
+            float(item["detector_ms"]) for item in timings
+        )
+        / max(len(timings), 1),
+        "mean_tracker_ms_per_frame": sum(
+            float(item["tracker_ms"]) for item in timings
+        )
+        / max(len(timings), 1),
+        "tile_invocations": sum(int(item["tile_count"]) for item in timings),
+    }
+    metrics["sequences"] = sequence_metrics
+    (output_dir / "tracks.jsonl").write_text(
+        "\n".join(tracks_jsonl) + "\n", encoding="utf-8"
+    )
+    (output_dir / "timings.jsonl").write_text(
+        "\n".join(json.dumps(item) for item in timings) + "\n", encoding="utf-8"
+    )
+    (output_dir / "metrics.json").write_text(
+        json.dumps(metrics, indent=2) + "\n", encoding="utf-8"
+    )
+    print(json.dumps(metrics, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     root = repository_root()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -647,6 +964,58 @@ def build_parser() -> argparse.ArgumentParser:
     phase4.add_argument("--device", default="cpu")
     phase4.add_argument("--frame-limit", type=int)
     phase4.set_defaults(handler=run_phase4_evaluate)
+
+    phase5 = subparsers.add_parser(
+        "phase5-evaluate",
+        help="measure one registered Phase 5 development profile end to end",
+    )
+    phase5.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=root
+        / "evaluation"
+        / "experiments"
+        / "exp_20260831_phase3_visdrone_det"
+        / "artefacts"
+        / "train"
+        / "weights"
+        / "best.pt",
+    )
+    phase5.add_argument("--source-dir", type=Path, required=True)
+    phase5.add_argument("--output-dir", type=Path, required=True)
+    phase5.add_argument(
+        "--partition", choices=["development", "held_out"], default="development"
+    )
+    phase5.add_argument(
+        "--selection-record",
+        type=Path,
+        help="required frozen selection record when evaluating held-out sequences",
+    )
+    phase5.add_argument(
+        "--protocol",
+        type=Path,
+        default=root / "configs" / "experiments" / "phase5_efficiency.yaml",
+    )
+    phase5.add_argument(
+        "--tracker-config",
+        type=Path,
+        default=root / "configs" / "tracking" / "botsort_phase4.yaml",
+    )
+    phase5.add_argument("--input-size", type=int, default=640)
+    phase5.add_argument("--precision", choices=["fp32", "fp16", "int8"], default="fp32")
+    phase5.add_argument("--detector-cadence", type=int, default=1)
+    phase5.add_argument(
+        "--tiling-mode",
+        choices=["off", "scheduled_2x2", "uncertainty_2x2"],
+        default="off",
+    )
+    phase5.add_argument(
+        "--preview", action=argparse.BooleanOptionalAction, default=False
+    )
+    phase5.add_argument("--confidence", type=float, default=0.001)
+    phase5.add_argument("--device", default="cpu")
+    phase5.add_argument("--frame-limit", type=int)
+    phase5.set_defaults(handler=run_phase5_evaluate)
     return parser
 
 

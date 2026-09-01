@@ -1,0 +1,40 @@
+# Phase 5 is an evaluation protocol, not a deployment configuration.  Keep the
+# Phase 4 held-out sequences sealed until a profile-selection rule is frozen.
+checkpoint:
+  path: evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts/train/weights/best.pt
+  sha256: sha256:7468c1bcdc4b8e22e57f3d6a356c79fa786bacdc14f9e19d8fe7ac4993a62871
+source_fps: 30.0
+development_sequences:
+  - uav0000086_00000_v
+  - uav0000117_02622_v
+  - uav0000137_00458_v
+held_out_sequences:
+  - uav0000182_00000_v
+  - uav0000268_05773_v
+  - uav0000305_00000_v
+  - uav0000339_00001_v
+matrix:
+  input_sizes_px: [640, 512, 416, 320]
+  precisions: [fp32, fp16, int8]
+  detector_cadences_frames: [1, 2, 3]
+  tiling:
+    - mode: off
+    - mode: scheduled_2x2
+      interval_frames: 30
+      overlap_fraction: 0.20
+    - mode: uncertainty_2x2
+      no_confident_small_object_frames: 30
+      small_box_max_area_norm: 0.0025
+      confidence_threshold: 0.50
+      overlap_fraction: 0.20
+  trackers:
+    - configs/tracking/bytetrack_phase4.yaml
+    - configs/tracking/botsort_phase4.yaml
+  preview: [false, true]
+selection:
+  # Apply these before one final held-out confirmation run.  Tune no thresholds
+  # while inspecting held-out results.
+  minimum_development_hota: 0.38
+  minimum_development_track_recall: 0.35
+  maximum_mean_pipeline_ms: 100.0
+  low_power_profile: lowest_measured_energy_per_frame_within_quality_floor

@@ -187,10 +187,11 @@ used as the score.
 
 ## Phase 5: find the efficient operating point
 
-**Status:** planned. The pre-registered matrix and desktop utilities are
-checked in under `configs/experiments/phase5_efficiency.yaml` and
-`evaluation/experiments/exp_20260901_phase5_efficiency/`, but no Phase 5 run
-or MaixCAM2 measurement has been completed.
+**Status:** complete (desktop gate). The pre-registered protocol, runner,
+development measurements, selection record, and one sealed held-out
+confirmation are recorded under `configs/experiments/phase5_efficiency.yaml`
+and `evaluation/experiments/exp_20260901_phase5_efficiency/`. No MaixCAM2
+measurement has been completed.
 
 **Purpose:** identify accuracy-qualified operating candidates without making
 small targets disappear. This phase does **not** select the final onboard

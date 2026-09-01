@@ -154,3 +154,12 @@ architecture. Phase 4 is also complete: BoT-SORT with camera-motion
 compensation and ReID disabled was selected on development data, then scored
 once on held-out VisDrone-MOT sequences (HOTA 0.4076; IDF1 0.8591). See
 [`exp_20260831_phase4_tracking`](evaluation/experiments/exp_20260831_phase4_tracking/report.md).
+
+Phase 5 is complete for the desktop gate. The every-frame 640px FP32 BoT-SORT
+profile remains the accuracy reference. A faster cadence-two profile met the
+development floor but failed its single sealed held-out confirmation, so it was
+rejected rather than tuned further. The full decision, raw artefacts, and
+limits of the desktop measurement are in
+[`exp_20260901_phase5_efficiency`](evaluation/experiments/exp_20260901_phase5_efficiency/report.md).
+Phase 6 must still establish ONNX/INT8 parity and complete-pipeline power and
+latency on MaixCAM2 before selecting an onboard profile.

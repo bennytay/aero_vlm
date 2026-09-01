@@ -1,0 +1,14 @@
+{
+  "experiment_id": "exp_20260901_phase5_efficiency",
+  "status": "complete_desktop_gate",
+  "phase": 5,
+  "question": "Which resolution, precision, detector cadence, tiling policy, tracker, and preview setting preserves small-object tracking quality at the lowest full-pipeline cost?",
+  "protocol": "configs/experiments/phase5_efficiency.yaml",
+  "baseline": "exp_20260831_phase4_tracking",
+  "checkpoint": {
+    "path": "evaluation/experiments/exp_20260831_phase3_visdrone_det/artefacts/train/weights/best.pt",
+    "sha256": "sha256:7468c1bcdc4b8e22e57f3d6a356c79fa786bacdc14f9e19d8fe7ac4993a62871"
+  },
+  "held_out_status": "one_confirmation_run_complete_candidate_rejected",
+  "selection_record": "evaluation/experiments/exp_20260901_phase5_efficiency/selection.json"
+}

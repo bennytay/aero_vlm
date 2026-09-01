@@ -1,0 +1,7 @@
+{
+  "status": "frozen_before_held_out_confirmation",
+  "quality_reference": "640px fp32 cadence 1 tiles off BoT-SORT preview off",
+  "held_out_confirmation_profile": "640px fp32 cadence 2 tiles off BoT-SORT preview off",
+  "rule": "Select the lowest measured desktop pipeline latency profile satisfying HOTA >= 0.38 and track recall >= 0.35; retain the every-frame 640px reference for Phase 6 parity comparison.",
+  "limitations": "No valid host power telemetry was available because NVML could not initialise. This is a desktop low-latency selection, not a low-power or MaixCAM2 selection."
+}

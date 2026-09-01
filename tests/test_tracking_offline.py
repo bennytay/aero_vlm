@@ -68,4 +68,6 @@ def test_metrics_report_identity_switches_fragmentation_and_breakdowns() -> None
 
     assert metrics["track_recall"] == 1.0
     assert metrics["identity_switches"] == 1
-    assert set(metrics["breakdowns"]) == {"medium:none", "medium:heavy"}
+    breakdowns = metrics["breakdowns"]
+    assert isinstance(breakdowns, dict)
+    assert set(breakdowns) == {"medium:none", "medium:heavy"}

@@ -1,0 +1,310 @@
+{
+  "$defs": {
+    "AnswerResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "vlm_response_v1",
+          "default": "vlm_response_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "type": {
+          "const": "answer",
+          "title": "Type",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "not_visible",
+            "ambiguous",
+            "unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "answer": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "boolean": "#/$defs/BooleanAnswer",
+                  "count": "#/$defs/CountAnswer",
+                  "label": "#/$defs/LabelAnswer",
+                  "text": "#/$defs/TextAnswer"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/BooleanAnswer"
+                },
+                {
+                  "$ref": "#/$defs/CountAnswer"
+                },
+                {
+                  "$ref": "#/$defs/LabelAnswer"
+                },
+                {
+                  "$ref": "#/$defs/TextAnswer"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer"
+        }
+      },
+      "required": [
+        "type",
+        "status"
+      ],
+      "title": "AnswerResponse",
+      "type": "object"
+    },
+    "BooleanAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "boolean",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "BooleanAnswer",
+      "type": "object"
+    },
+    "CaptionResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "vlm_response_v1",
+          "default": "vlm_response_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "type": {
+          "const": "caption",
+          "title": "Type",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        }
+      },
+      "required": [
+        "type",
+        "status"
+      ],
+      "title": "CaptionResponse",
+      "type": "object"
+    },
+    "CountAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "count",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "minimum": 0,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "CountAnswer",
+      "type": "object"
+    },
+    "LabelAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "label",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "LabelAnswer",
+      "type": "object"
+    },
+    "PointResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "vlm_response_v1",
+          "default": "vlm_response_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "type": {
+          "const": "point",
+          "title": "Type",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "found",
+            "not_visible",
+            "ambiguous",
+            "unknown",
+            "no_candidate"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "point": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RelativePoint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "type",
+        "status"
+      ],
+      "title": "PointResponse",
+      "type": "object"
+    },
+    "RelativePoint": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        },
+        "coordinate_system": {
+          "const": "relative_0_1000_xy",
+          "default": "relative_0_1000_xy",
+          "title": "Coordinate System",
+          "type": "string"
+        },
+        "semantics": {
+          "enum": [
+            "target_center",
+            "review_region"
+          ],
+          "title": "Semantics",
+          "type": "string"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "semantics"
+      ],
+      "title": "RelativePoint",
+      "type": "object"
+    },
+    "TextAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "TextAnswer",
+      "type": "object"
+    }
+  },
+  "description": "Schema-generation wrapper for the discriminated VLM response union.",
+  "discriminator": {
+    "mapping": {
+      "answer": "#/$defs/AnswerResponse",
+      "caption": "#/$defs/CaptionResponse",
+      "point": "#/$defs/PointResponse"
+    },
+    "propertyName": "type"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/CaptionResponse"
+    },
+    {
+      "$ref": "#/$defs/AnswerResponse"
+    },
+    {
+      "$ref": "#/$defs/PointResponse"
+    }
+  ],
+  "title": "VLMResponseContract"
+}

@@ -12,6 +12,11 @@ from wam_drones.detection import (
     FrameTracks,
     TrackObservation,
 )
+from wam_drones.vlm.contracts import (
+    VLMInferenceRecord,
+    VLMResponseContract,
+    VLMSupervisionRecord,
+)
 
 SCHEMAS: dict[str, type[BaseModel]] = {
     "detection_v1.schema.json": Detection,
@@ -20,6 +25,9 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "track_observation_v1.schema.json": TrackObservation,
     "image_record_v1.schema.json": ImageRecord,
     "dataset_manifest_v1.schema.json": DatasetManifest,
+    "vlm_response_v1.schema.json": VLMResponseContract,
+    "vlm_supervision_record_v1.schema.json": VLMSupervisionRecord,
+    "vlm_inference_record_v1.schema.json": VLMInferenceRecord,
 }
 
 

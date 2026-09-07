@@ -1,0 +1,455 @@
+{
+  "$defs": {
+    "AnswerResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "vlm_response_v1",
+          "default": "vlm_response_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "type": {
+          "const": "answer",
+          "title": "Type",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "not_visible",
+            "ambiguous",
+            "unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "answer": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "boolean": "#/$defs/BooleanAnswer",
+                  "count": "#/$defs/CountAnswer",
+                  "label": "#/$defs/LabelAnswer",
+                  "text": "#/$defs/TextAnswer"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/BooleanAnswer"
+                },
+                {
+                  "$ref": "#/$defs/CountAnswer"
+                },
+                {
+                  "$ref": "#/$defs/LabelAnswer"
+                },
+                {
+                  "$ref": "#/$defs/TextAnswer"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer"
+        }
+      },
+      "required": [
+        "type",
+        "status"
+      ],
+      "title": "AnswerResponse",
+      "type": "object"
+    },
+    "BooleanAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "boolean",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "BooleanAnswer",
+      "type": "object"
+    },
+    "CaptionResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "vlm_response_v1",
+          "default": "vlm_response_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "type": {
+          "const": "caption",
+          "title": "Type",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        }
+      },
+      "required": [
+        "type",
+        "status"
+      ],
+      "title": "CaptionResponse",
+      "type": "object"
+    },
+    "CountAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "count",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "minimum": 0,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "CountAnswer",
+      "type": "object"
+    },
+    "LabelAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "label",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "LabelAnswer",
+      "type": "object"
+    },
+    "PointResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "vlm_response_v1",
+          "default": "vlm_response_v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "type": {
+          "const": "point",
+          "title": "Type",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "found",
+            "not_visible",
+            "ambiguous",
+            "unknown",
+            "no_candidate"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "point": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RelativePoint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "type",
+        "status"
+      ],
+      "title": "PointResponse",
+      "type": "object"
+    },
+    "RelativePoint": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        },
+        "coordinate_system": {
+          "const": "relative_0_1000_xy",
+          "default": "relative_0_1000_xy",
+          "title": "Coordinate System",
+          "type": "string"
+        },
+        "semantics": {
+          "enum": [
+            "target_center",
+            "review_region"
+          ],
+          "title": "Semantics",
+          "type": "string"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "semantics"
+      ],
+      "title": "RelativePoint",
+      "type": "object"
+    },
+    "SourceFrame": {
+      "additionalProperties": false,
+      "description": "Source identity retained in audit and supervision records only.",
+      "properties": {
+        "source_id": {
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "sequence_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sequence Id"
+        },
+        "frame_number": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frame Number"
+        }
+      },
+      "required": [
+        "source_id"
+      ],
+      "title": "SourceFrame",
+      "type": "object"
+    },
+    "TextAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "TextAnswer",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Canonical, model-agnostic training evidence before chat export.",
+  "properties": {
+    "schema_version": {
+      "const": "vlm_supervision_record_v1",
+      "default": "vlm_supervision_record_v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sample_id": {
+      "minLength": 1,
+      "title": "Sample Id",
+      "type": "string"
+    },
+    "image_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Image Sha256",
+      "type": "string"
+    },
+    "source_frame": {
+      "$ref": "#/$defs/SourceFrame"
+    },
+    "dataset": {
+      "minLength": 1,
+      "title": "Dataset",
+      "type": "string"
+    },
+    "source_split": {
+      "minLength": 1,
+      "title": "Source Split",
+      "type": "string"
+    },
+    "split": {
+      "enum": [
+        "train",
+        "development",
+        "test"
+      ],
+      "title": "Split",
+      "type": "string"
+    },
+    "task_family": {
+      "minLength": 1,
+      "title": "Task Family",
+      "type": "string"
+    },
+    "question": {
+      "minLength": 1,
+      "title": "Question",
+      "type": "string"
+    },
+    "expected_response": {
+      "discriminator": {
+        "mapping": {
+          "answer": "#/$defs/AnswerResponse",
+          "caption": "#/$defs/CaptionResponse",
+          "point": "#/$defs/PointResponse"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CaptionResponse"
+        },
+        {
+          "$ref": "#/$defs/AnswerResponse"
+        },
+        {
+          "$ref": "#/$defs/PointResponse"
+        }
+      ],
+      "title": "Expected Response"
+    },
+    "prompt_template_id": {
+      "minLength": 1,
+      "title": "Prompt Template Id",
+      "type": "string"
+    },
+    "teacher_source": {
+      "enum": [
+        "ground_truth",
+        "tracks",
+        "detector",
+        "human"
+      ],
+      "title": "Teacher Source",
+      "type": "string"
+    },
+    "teacher_evidence": {
+      "additionalProperties": true,
+      "title": "Teacher Evidence",
+      "type": "object"
+    },
+    "label_confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Label Confidence",
+      "type": "number"
+    },
+    "rejection_reasons": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Rejection Reasons",
+      "type": "array"
+    }
+  },
+  "required": [
+    "sample_id",
+    "image_sha256",
+    "source_frame",
+    "dataset",
+    "source_split",
+    "split",
+    "task_family",
+    "question",
+    "expected_response",
+    "prompt_template_id",
+    "teacher_source",
+    "teacher_evidence",
+    "label_confidence"
+  ],
+  "title": "VLMSupervisionRecord",
+  "type": "object"
+}

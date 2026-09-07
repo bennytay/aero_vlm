@@ -266,6 +266,30 @@ mechanism itself is available and affordable now, and using it made this
 specific case regress from "wrong status, valid JSON" to "wrong status,
 invalid JSON." It was not adopted.
 
+## Decoding-strategy checks on the remaining 4 (2026-09-08)
+
+Two more zero-shot levers, orthogonal to prompt wording, were tried
+directly against the 4 still-failing cases before concluding the gap is a
+training-data problem:
+
+- **Beam search** (`num_beams=4`, `do_sample=False`) reproduced the exact
+  same status choice as greedy decoding on all 4 cases — no change.
+- **Temperature sampling** (`do_sample=True`, `temperature=0.8`,
+  `top_p=0.95`, 5-6 samples per case) showed the model is not uniformly
+  stuck: `point_absent_01` produced the correct `no_candidate` on 1 of 6
+  samples (the other 5 said `not_visible`). But `point_ambiguous_01` and
+  `answer_ambiguous_01` gave the identical wrong answer on 5 of 5 samples
+  each — effectively zero probability mass on the correct status — and
+  `review_region_02` never produced the correct `found` across 5 samples
+  (it split between `ambiguous` and `not_visible`, both wrong).
+
+This means self-consistency/majority-vote sampling would not reliably fix
+even the one case that showed any variance, and confirms the remaining gap
+sits in the model's learned probability distribution over statuses, not in
+how that distribution is decoded. Reweighting that distribution is what
+fine-tuning does; no decoding-time strategy available in this codebase
+changes it.
+
 ## Next work
 
 1. Replace the provisional type/status-only smoke checks with task-aware

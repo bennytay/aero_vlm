@@ -25,7 +25,7 @@ from wam_drones.vlm.contracts import (
     parse_vlm_response,
 )
 from wam_drones.vlm.model_config import VLMModelConfig
-from wam_drones.vlm.prompts import PROMPT_REVISION, SYSTEM_PROMPT
+from wam_drones.vlm.prompts import PROMPT_REVISION, render_prompt
 
 if TYPE_CHECKING:
     from PIL.Image import Image
@@ -121,7 +121,7 @@ class TransformersVLMBackend:
                     },
                     {
                         "type": "text",
-                        "text": f"{SYSTEM_PROMPT}\n\nUser question: {question}",
+                        "text": render_prompt(question),
                     },
                 ],
             },

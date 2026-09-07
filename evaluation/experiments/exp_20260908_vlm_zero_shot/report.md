@@ -19,11 +19,16 @@ The primary low-compute baseline successfully produced strict structured JSON
 on a 960x540 aerial frame. Qwen resized it to 960x544, used 4.43 GB peak GPU
 memory, and generated the response in 1.54 seconds.
 
-On the unreviewed 36-frame candidate pack in deterministic unconstrained mode,
-it averaged 1.09 seconds per frame and 4.51 GB peak GPU memory. Only 12 of 36
+On the unreviewed 36-frame candidate pack, the first broad all-types prompt
+averaged 1.09 seconds per frame and 4.51 GB peak GPU memory. Only 12 of 36
 outputs parsed as `vlm_response_v1`; most failures were code-fenced JSON or
-objects missing required fields. The recorded `semantic_failures: 31` is a
-provisional contract/type-status mismatch count, not a human semantic score.
+objects missing required fields.
+
+Question-routed templates raised unconstrained parse success to 29 of 36
+(80.6%). The compatible Transformers 4.57 runtime used for this pass averaged
+8.16 seconds per frame and 6.64 GB peak GPU memory. The recorded
+`semantic_failures: 23` is a provisional contract/type-status mismatch count,
+not a human semantic score.
 
 Schema-constrained decoding on one caption case produced valid JSON but took
 44.94 seconds and 6.42 GB peak GPU memory. It is useful as a correctness

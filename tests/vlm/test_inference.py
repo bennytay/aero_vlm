@@ -5,6 +5,7 @@ import pytest
 from wam_drones.vlm.cli import build_parser
 from wam_drones.vlm.inference import infer_image
 from wam_drones.vlm.model_config import load_model_config
+from wam_drones.vlm.prompts import render_prompt
 
 
 class FakeBackend:
@@ -71,3 +72,10 @@ def test_infer_cli_accepts_a_single_image_question() -> None:
     )
     assert args.command == "infer"
     assert args.question == "What is visible?"
+
+
+def test_prompt_router_uses_one_response_schema_for_each_task() -> None:
+    assert '"type":"caption"' in render_prompt("Describe this image.")
+    assert '"kind":"count"' in render_prompt("How many cars are visible?")
+    assert '"kind":"boolean"' in render_prompt("Is a car visible?")
+    assert '"semantics":"target_center"' in render_prompt("Point to the car.")

@@ -105,6 +105,12 @@ class TransformersVLMBackend:
         model_options: dict[str, Any] = {"revision": config.revision}
         if device == "auto":
             model_options["device_map"] = "auto"
+        if config.dtype is not None:
+            torch = import_module("torch")
+            resolved_dtype = getattr(torch, config.dtype, None)
+            if not isinstance(resolved_dtype, torch.dtype):
+                raise ValueError(f"unknown torch dtype: {config.dtype!r}")
+            model_options["dtype"] = resolved_dtype
         self.model = model_class.from_pretrained(config.repository, **model_options)
         if device != "auto":
             self.model.to(device)

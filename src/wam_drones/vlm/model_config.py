@@ -23,6 +23,7 @@ class VLMModelConfig(BaseModel):
     temperature: float = Field(ge=0.0)
     image_max_pixels: int = Field(gt=0)
     supports_schema_constrained_decoding: bool
+    dtype: str | None = None
 
 
 def load_model_config(path: Path) -> VLMModelConfig:

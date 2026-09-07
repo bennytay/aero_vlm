@@ -33,6 +33,21 @@ def test_cli_accepts_folder_video_export_and_parity_commands(tmp_path: Path) -> 
     )
     assert evaluate.model_kind == "native"
 
+    phase4 = parser.parse_args(
+        [
+            "phase4-evaluate",
+            "--checkpoint",
+            "model.pt",
+            "--source-dir",
+            str(tmp_path),
+            "--partition",
+            "development",
+            "--output-dir",
+            str(tmp_path / "phase4"),
+        ]
+    )
+    assert phase4.tracker_config.name == "botsort_phase4.yaml"
+
     demo = parser.parse_args(
         [
             "demo-video",

@@ -155,6 +155,13 @@ compensation and ReID disabled was selected on development data, then scored
 once on held-out VisDrone-MOT sequences (HOTA 0.4076; IDF1 0.8591). See
 [`exp_20260831_phase4_tracking`](evaluation/experiments/exp_20260831_phase4_tracking/report.md).
 
+Phase 4 tracking output is also the VLM teacher boundary. Each new
+`phase4-evaluate` run writes validated `tracks.jsonl`, `frame_provenance.jsonl`,
+and `teacher_metadata.json` artefacts. The provenance index maps every global
+frame ID to its sequence, original one-based source frame/path, decoded size,
+and SHA-256. `demo-video` writes unfiltered `FrameTracks` to its `.tracks.jsonl`
+sidecar and retains overlay-only filtering in `.presentation_tracks.jsonl`.
+
 Phase 5 is complete for the desktop gate. The every-frame 640px FP32 BoT-SORT
 profile remains the accuracy reference. A faster cadence-two profile met the
 development floor but failed its single sealed held-out confirmation, so it was

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 from collections.abc import Sequence
 from dataclasses import asdict, replace
 from importlib import import_module
 from math import hypot
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from wam_drones.detection.checkpoint import ensure_checkpoint
 from wam_drones.detection.export import export_onnx
@@ -48,6 +49,15 @@ from wam_drones.tracking.offline import (
     load_tracker_config,
     mot_lines,
 )
+from wam_drones.vlm.teacher import (
+    FrameProvenance,
+    TeacherRunMetadata,
+    sha256_file,
+    validate_teacher_artifact,
+    validate_track_jsonl,
+    write_provenance_index,
+    write_teacher_metadata,
+)
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
@@ -61,6 +71,62 @@ def _write_jsonl(path: Path, payloads: Sequence[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     contents = "\n".join(payloads)
     path.write_text(f"{contents}\n" if contents else "", encoding="utf-8")
+
+
+def _repository_path(path: Path) -> str:
+    """Use repository-relative paths in artefact metadata whenever possible."""
+    try:
+        return path.resolve().relative_to(repository_root()).as_posix()
+    except ValueError:
+        return str(path.resolve())
+
+
+def _code_revision() -> str:
+    """Record the exact revision, retaining a clear marker outside a Git checkout."""
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repository_root(),
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    return result.stdout.strip() if result.returncode == 0 else "unversioned"
+
+
+def _teacher_metadata(
+    *,
+    artifact_kind: Literal["evaluation", "demo"],
+    checkpoint: Path,
+    tracker_config_path: Path,
+    tracker: OfflineTracker,
+    protocol: Path | None,
+) -> TeacherRunMetadata:
+    """Capture the detector, tracker, protocol, and code identities for a run."""
+    config = tracker.config
+    thresholds = {
+        "high_confidence_threshold": config.high_confidence_threshold,
+        "low_confidence_threshold": config.low_confidence_threshold,
+        "new_track_threshold": config.new_track_threshold,
+        "match_iou_threshold": config.match_iou_threshold,
+        "low_match_iou_threshold": config.low_match_iou_threshold,
+        "max_time_since_update_frames": config.max_time_since_update_frames,
+        "min_hits": config.min_hits,
+        "camera_motion_compensation": config.camera_motion_compensation,
+        "reid_enabled": config.reid_enabled,
+        "source_fps": config.source_fps,
+    }
+    return TeacherRunMetadata(
+        artifact_kind=artifact_kind,
+        detector_checkpoint=_repository_path(checkpoint),
+        detector_checkpoint_sha256=sha256_file(checkpoint),
+        tracker_config=_repository_path(tracker_config_path),
+        tracker_config_sha256=sha256_file(tracker_config_path),
+        tracker_name=config.name,
+        tracker_thresholds=thresholds,
+        protocol=_repository_path(protocol) if protocol is not None else None,
+        protocol_sha256=sha256_file(protocol) if protocol is not None else None,
+        code_revision=_code_revision(),
+    )
 
 
 def _write_image(path: Path, image: object) -> None:
@@ -354,6 +420,7 @@ def run_phase4_evaluate(args: argparse.Namespace, _config: DetectorModelConfig) 
     all_tracks = {}
     all_camera_motion: dict[int, float] = {}
     predictions_jsonl: list[str] = []
+    provenance_records: list[FrameProvenance] = []
     sequence_metrics: dict[str, object] = {}
     frame_offset = 0
     for sequence_index, sequence_id in enumerate(selected):
@@ -422,6 +489,17 @@ def run_phase4_evaluate(args: argparse.Namespace, _config: DetectorModelConfig) 
             local_tracks[global_frame] = tracks
             local_camera_motion[global_frame] = tracker.last_camera_motion_norm
             predictions_jsonl.append(tracks.model_dump_json())
+            provenance_records.append(
+                FrameProvenance(
+                    frame_id=global_frame,
+                    sequence_id=sequence_id,
+                    source_frame_number=frame_number,
+                    source_path=image_path.relative_to(args.source_dir).as_posix(),
+                    image_width_px=width,
+                    image_height_px=height,
+                    source_sha256=sha256_file(image_path),
+                )
+            )
             mot_output.extend(mot_lines((tracks,), width, height))
             local_ground_truth[global_frame] = tuple(
                 GroundTruth(
@@ -468,6 +546,22 @@ def run_phase4_evaluate(args: argparse.Namespace, _config: DetectorModelConfig) 
     (output_dir / "tracks.jsonl").write_text(
         "\n".join(predictions_jsonl) + ("\n" if predictions_jsonl else ""),
         encoding="utf-8",
+    )
+    provenance_path = output_dir / "frame_provenance.jsonl"
+    metadata_path = output_dir / "teacher_metadata.json"
+    write_provenance_index(provenance_path, provenance_records)
+    write_teacher_metadata(
+        metadata_path,
+        _teacher_metadata(
+            artifact_kind="evaluation",
+            checkpoint=args.checkpoint,
+            tracker_config_path=args.tracker_config,
+            tracker=tracker,
+            protocol=args.protocol,
+        ),
+    )
+    validate_teacher_artifact(
+        output_dir / "tracks.jsonl", provenance_path, metadata_path
     )
     metrics = evaluate_tracking(
         all_ground_truth,
@@ -931,6 +1025,7 @@ def run_demo_video(args: argparse.Namespace, _config: DetectorModelConfig) -> in
     frame_index = 0
     timings_ms: list[float] = []
     tracks_jsonl: list[str] = []
+    presentation_tracks_jsonl: list[str] = []
     track_history: dict[int, list[tuple[float, float]]] = {}
     try:
         while args.frame_limit is None or frame_index < args.frame_limit:
@@ -1009,7 +1104,10 @@ def run_demo_video(args: argparse.Namespace, _config: DetectorModelConfig) -> in
                     raise RuntimeError(f"cannot open demo output: {args.output}")
             writer.write(image)
             timings_ms.append(pipeline_ms)
-            tracks_jsonl.append(visible_tracks.model_dump_json())
+            # The sidecar is teacher-grade tracker output.  The overlay uses a
+            # presentation-only visibility filter and is saved separately.
+            tracks_jsonl.append(tracks.model_dump_json())
+            presentation_tracks_jsonl.append(visible_tracks.model_dump_json())
             frame_index += 1
     finally:
         capture.release()
@@ -1018,6 +1116,10 @@ def run_demo_video(args: argparse.Namespace, _config: DetectorModelConfig) -> in
     if not timings_ms:
         raise ValueError(f"demo source contains no frames: {args.source}")
     tracks_output.write_text("\n".join(tracks_jsonl) + "\n", encoding="utf-8")
+    validate_track_jsonl(tracks_output)
+    args.output.with_suffix(".presentation_tracks.jsonl").write_text(
+        "\n".join(presentation_tracks_jsonl) + "\n", encoding="utf-8"
+    )
     metrics_output.write_text(
         json.dumps(
             {
@@ -1034,6 +1136,8 @@ def run_demo_video(args: argparse.Namespace, _config: DetectorModelConfig) -> in
                 "confidence": args.confidence,
                 "min_confirmed_motion_px": args.min_confirmed_motion_px,
                 "tracker_config": str(args.tracker_config),
+                "tracks_sidecar": "unfiltered FrameTracks v1",
+                "presentation_tracks_sidecar": "visibility-filtered overlay tracks",
             },
             indent=2,
         )
@@ -1197,7 +1301,7 @@ def build_parser() -> argparse.ArgumentParser:
     phase4.add_argument(
         "--tracker-config",
         type=Path,
-        default=root / "configs" / "tracking" / "bytetrack_phase4.yaml",
+        default=root / "configs" / "tracking" / "botsort_phase4.yaml",
     )
     phase4.add_argument(
         "--protocol",

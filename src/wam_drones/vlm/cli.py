@@ -190,7 +190,7 @@ def build_parser() -> argparse.ArgumentParser:
     infer.add_argument("--prompt-revision", default=PROMPT_REVISION)
     infer.add_argument("--sample-every", type=int, default=30)
     infer.add_argument("--frame-limit", type=int)
-    smoke = subparsers.add_parser("smoke", help="run the 36-case task-balanced suite")
+    smoke = subparsers.add_parser("smoke", help="run the 17-case task-balanced suite")
     smoke.add_argument("--images-dir", type=Path, required=True)
     smoke.add_argument(
         "--suite",

@@ -37,6 +37,20 @@ def point_payload(**changes: object) -> dict[str, object]:
     return payload
 
 
+def test_parse_vlm_response_unwraps_a_single_markdown_code_fence() -> None:
+    response = CaptionResponse(type="caption", status="ok", text="Two cars are visible.")
+    fenced = f"```json\n{response.model_dump_json()}\n```"
+    assert parse_vlm_response(fenced) == response
+
+    fenced_no_language_tag = f"```\n{response.model_dump_json()}\n```"
+    assert parse_vlm_response(fenced_no_language_tag) == response
+
+
+def test_parse_vlm_response_still_rejects_unfenced_malformed_json() -> None:
+    with pytest.raises(ValidationError):
+        parse_vlm_response("not JSON")
+
+
 def test_response_union_round_trips_all_variants() -> None:
     responses = (
         CaptionResponse(type="caption", status="ok", text="Two cars are visible."),

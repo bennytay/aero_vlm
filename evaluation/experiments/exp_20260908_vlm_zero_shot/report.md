@@ -41,12 +41,111 @@ generation to 64 tokens. It used 6.88 GB peak GPU memory and took 7.64 seconds
 for the caption probe. It returned plain text despite the model-visible strict
 JSON instruction, so it presently fails the output-contract gate.
 
+## Candidate pack audit (2026-09-08)
+
+A visual audit of all 36 candidate images against `configs/vlm/smoke_suite_v1.json`
+found the pack was not 36 independent cases. Hashing every image showed only
+**17 unique frames**; 19 manifest rows were duplicate copies of another row's
+image under a different filename and question. Several of those duplicates
+carried self-contradictory ground truth relative to the shared frame: a
+"point to the red car" case (expects `found`) and a "point to the truck"
+case (expects `no_candidate`) shared one image containing a truck and no
+car — the labels were inverted. A "point to the bicycle" case expected
+`found` on a rooftop frame with no bicycle in it. The entire `low_visibility`/
+`hidden` category turned out to be bright, fully legible daytime scenes with
+no occlusion, contradicting the category tag.
+
+The pack was deduplicated to 17 unique frames and the ground truth corrected
+against what each image actually shows (`configs/vlm/smoke_suite_v1.json`,
+`evaluation/experiments/exp_20260908_vlm_zero_shot/artefacts/smoke_candidates/images/`).
+The `wam-vlm smoke` CLI help text was updated from "36-case" to "17-case"
+accordingly. The pre-audit 81%/29-of-36 result above should be treated as
+provisional and superseded by the run below.
+
+Re-running Qwen3-VL-2B (`vlm-spike-v3` routed prompts) against the corrected
+17-frame pack (`qwen3_vl_2b_dedup17_smoke_candidates`) gave a materially
+different picture: **12 of 17 parsed (70.6%)**, mean latency 9.22 s/frame,
+peak memory 6.64 GB. Of the 5 unconstrained parse failures, all were `point`
+type and reproduce the same root causes seen previously — markdown code
+fences not stripped before validation, `point` populated when `status` isn't
+`found` (schema forbids this), and a `point.semantics` enum too narrow for
+what the model returns.
+
+More notably, of the 12 that *did* parse, only 6 matched expected
+`type`/`status`: three caption cases on genuinely clear, describable scenes
+came back `status: unknown` instead of `ok`; a `point` case on an image with
+exactly one unambiguous person came back `no_candidate`. These are real
+model behavior gaps, not pack-labeling artifacts — the previous unaudited
+pack was masking this signal.
+
+## Parser and prompt fixes (2026-09-08, `vlm-spike-v4`)
+
+Two of the three parse-failure root causes from the audit above were
+mechanical and got fixed directly:
+
+- `parse_vlm_response` (`src/wam_drones/vlm/contracts.py`) now unwraps a
+  single leading/trailing Markdown code fence before validating, since the
+  model reliably wraps otherwise-valid JSON in ` ```json...``` ` despite
+  being told not to. This is the only normalization it performs.
+- The raw caption/point/answer generations showed the model echoing the
+  prompt's negative-case clause almost verbatim regardless of image content:
+  three different images produced the byte-identical
+  `{"type":"caption","status":"unknown","text":null}`, and two different
+  `point` questions produced the byte-identical
+  `{"type":"point","status":"no_candidate","point":null}`. The prompt
+  template (`src/wam_drones/vlm/prompts.py`) was rewritten so every
+  fallback status is shown as its own concrete JSON example with an
+  explicit "only use this when…" criterion, instead of one prose clause
+  appended to the positive example, and the system prompt now states
+  outright that an ordinary photograph is not grounds for abstaining.
+
+Re-running the corrected 17-frame pack under `vlm-spike-v4`
+(`qwen3_vl_2b_v4_dedup17_smoke_candidates`) confirmed both fixes worked:
+**parse success rose from 70.6% to 94.1% (16/17)**, and — more importantly —
+**true `type`/`status` matches roughly doubled, from 6/17 (35.3%) to 10/17
+(58.8%)**. All five caption cases and the two previously fence-wrapped
+`point` cases (`point_car_02`, `point_truck_01`) now pass outright, and
+`point_absent_01` stopped hallucinating a bicycle that isn't in frame
+(it now abstains, just with the wrong specific status).
+
+**A follow-up prompt attempt (`vlm-spike-v5`) was tried and reverted.** The
+remaining 7 failures still showed an echo pattern — four different `point`
+cases converged on the byte-identical `{"status":"not_visible","point":null}`
+regardless of what each image actually called for. Restructuring the four
+negative-branch examples into one parameterized `{"status":"<pick one>",...}`
+shape with prose criteria (hypothesis: four consecutive full JSON snippets
+invite copy-pasting the nearest match) was tested against just the 7 failing
+cases first. It did stop the `not_visible` echo, but parse success on that
+subset fell from 6/7 to 3/7 — the model started answering `"found"` with
+hallucinated coordinates for genuinely ambiguous scenes and dropping the
+required `coordinate_system`/`semantics` keys. Net effect was worse, so the
+change was reverted; `vlm-spike-v4` is the current prompt. **Do not retry
+this exact restructuring** — record it here so it isn't rediscovered blind.
+
+The remaining 7 failures on `vlm-spike-v4` split into two kinds:
+
+- One narrow schema slip: `point_ambiguous_01` returns `{"x":..,"y":..}`
+  missing `coordinate_system` and `semantics`, a single occurrence.
+- Six genuine reasoning misses: `presence_person_01` and `point_person_01`
+  abstain on unambiguous content; `point_absent_01`, `point_ambiguous_02`,
+  and `review_region_02` pick the wrong one of four valid-looking abstention
+  statuses; `answer_ambiguous_01` answers with one car's colour instead of
+  flagging that "the car" is underspecified among several. These look like
+  a genuine ceiling for zero-shot prompting on a 2B model discriminating
+  among 4–5 similar abstention statuses, not an engineering defect — the
+  v5 experiment above is evidence further prompt-only iteration here has
+  turned risky rather than productive.
+
 ## Next work
 
-1. Visually audit every candidate image, question, expected status, and
-   expected response before treating the smoke pack as an evaluation suite.
-2. Replace the provisional type/status-only smoke checks with task-aware
+1. Replace the provisional type/status-only smoke checks with task-aware
    semantic scoring for reviewed responses.
-3. Use Qwen3-VL-2B as the only local candidate for the next iteration. Improve
-   its unconstrained JSON reliability through prompt routing or aerial SFT;
-   retain constrained decoding only as a measured reference.
+2. Close the remaining status-discrimination gap via few-shot exemplars in
+   the prompt or light aerial SFT, not further zero-shot prompt rewrites —
+   see the `vlm-spike-v5` negative result above.
+3. Use Qwen3-VL-2B as the only local candidate for the next iteration; retain
+   schema-constrained decoding only as a measured reference (44.94 s/case is
+   not viable live, but it's useful for isolating format failures from
+   reasoning failures on the same inputs). SmolVLM2 is dropped from further
+   local-candidate consideration — it returns plain text despite a
+   strict-JSON instruction and fails the output-contract gate outright.

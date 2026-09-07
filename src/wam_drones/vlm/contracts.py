@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Annotated, Final, Literal, TypeAlias
 
 from pydantic import (
@@ -115,9 +116,28 @@ class VLMResponseContract(RootModel[VLMResponse]):
     """Schema-generation wrapper for the discriminated VLM response union."""
 
 
+_CODE_FENCE_PATTERN: Final = re.compile(
+    r"^```(?:json)?\s*\n?(?P<body>.*?)\n?```$", re.DOTALL
+)
+
+
+def _strip_code_fence(payload: str) -> str:
+    """Unwrap a single leading/trailing Markdown code fence, if present."""
+    stripped = payload.strip()
+    match = _CODE_FENCE_PATTERN.match(stripped)
+    return match.group("body") if match else stripped
+
+
 def parse_vlm_response(payload: str | bytes | bytearray) -> VLMResponse:
-    """Validate a raw model generation without repair or normalization."""
-    return _RESPONSE_ADAPTER.validate_json(payload)
+    """Validate a raw model generation.
+
+    The only normalization performed is unwrapping a single Markdown code
+    fence some models emit despite being told to reply with bare JSON; no
+    other repair is attempted.
+    """
+    if isinstance(payload, (bytes, bytearray)):
+        payload = payload.decode("utf-8")
+    return _RESPONSE_ADAPTER.validate_json(_strip_code_fence(payload))
 
 
 def pixel_to_relative_0_1000_xy(

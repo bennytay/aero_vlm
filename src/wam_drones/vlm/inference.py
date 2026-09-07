@@ -18,20 +18,28 @@ from uuid import uuid4
 from pydantic import ValidationError
 
 from wam_drones.vlm.contracts import (
+    AnswerResponse,
+    CaptionResponse,
+    PointResponse,
     PreprocessingMetadata,
     SourceFrame,
     VLMInferenceRecord,
-    VLMResponseContract,
     parse_vlm_response,
 )
 from wam_drones.vlm.model_config import VLMModelConfig
-from wam_drones.vlm.prompts import PROMPT_REVISION, render_prompt
+from wam_drones.vlm.prompts import PROMPT_REVISION, render_prompt, response_kind_for
 
 if TYPE_CHECKING:
     from PIL.Image import Image
 
 
 DecodeMode = Literal["unconstrained", "schema"]
+
+_RESPONSE_MODEL_BY_KIND: dict[str, type] = {
+    "caption": CaptionResponse,
+    "answer": AnswerResponse,
+    "point": PointResponse,
+}
 
 
 class VLMBackend(Protocol):
@@ -43,7 +51,9 @@ class VLMBackend(Protocol):
     @property
     def preprocessing_dimensions(self) -> tuple[int, int]: ...
 
-    def generate(self, rgb: Image, question: str) -> str: ...
+    def generate(
+        self, rgb: Image, question: str, *, decode_mode: DecodeMode | None = None
+    ) -> str: ...
 
 
 def image_sha256(path: Path) -> str:
@@ -148,8 +158,19 @@ class TransformersVLMBackend:
         resized = (max(1, round(width * scale)), max(1, round(height * scale)))
         return rgb.resize(resized)
 
-    def _schema_prefix_allowed_tokens(self) -> Any:
-        """Build optional strict JSON token filtering for compatible models."""
+    def _schema_prefix_allowed_tokens(self, question: str) -> Any:
+        """Build strict JSON token filtering scoped to the question's own type.
+
+        `lm-format-enforcer`'s handling of the top-level discriminated union
+        (`CaptionResponse | AnswerResponse | PointResponse`) does not enforce
+        nested `required` fields correctly: constraining against the full
+        union schema lets the model close a `point` object before supplying
+        the required `semantics` key, even though that key is `required` in
+        the emitted JSON Schema and is correctly enforced when the same
+        object is constrained on its own. Since `render_prompt` already
+        knows which single response type a question maps to, constrain
+        against that type's schema directly instead of the union's.
+        """
         try:
             lmfe = import_module("lmformatenforcer")
             integration = import_module("lmformatenforcer.integrations.transformers")
@@ -158,12 +179,20 @@ class TransformersVLMBackend:
                 "schema decoding requires `lm-format-enforcer`; install the "
                 "vlm-inference group"
             ) from error
-        parser = lmfe.JsonSchemaParser(VLMResponseContract.model_json_schema())
+        response_model = _RESPONSE_MODEL_BY_KIND[response_kind_for(question)]
+        parser = lmfe.JsonSchemaParser(response_model.model_json_schema())
         return integration.build_transformers_prefix_allowed_tokens_fn(
             self.processor.tokenizer, parser
         )
 
-    def generate(self, rgb: Image, question: str) -> str:
+    def generate(
+        self, rgb: Image, question: str, *, decode_mode: DecodeMode | None = None
+    ) -> str:
+        mode = decode_mode if decode_mode is not None else self.decode_mode
+        if mode == "schema" and not self.config.supports_schema_constrained_decoding:
+            raise ValueError(
+                f"{self.config.name} does not support schema-constrained decoding"
+            )
         if rgb.mode != "RGB":
             raise ValueError("VLMBackend requires an RGB image")
         processed_rgb = self._bounded_rgb(rgb)
@@ -188,8 +217,10 @@ class TransformersVLMBackend:
         }
         if self.config.do_sample:
             options["temperature"] = self.config.temperature
-        if self.decode_mode == "schema":
-            options["prefix_allowed_tokens_fn"] = self._schema_prefix_allowed_tokens()
+        if mode == "schema":
+            options["prefix_allowed_tokens_fn"] = self._schema_prefix_allowed_tokens(
+                question
+            )
         output = self.model.generate(**inputs, **options)
         prompt_length = int(inputs["input_ids"].shape[-1])
         generated = output[:, prompt_length:]
@@ -204,6 +235,7 @@ def infer_image(
     *,
     source_frame: SourceFrame | None = None,
     prompt_revision: str = PROMPT_REVISION,
+    decode_mode: DecodeMode | None = None,
 ) -> tuple[VLMInferenceRecord, float]:
     """Generate once, preserving malformed model output as a failed audit row."""
     try:
@@ -221,6 +253,7 @@ def infer_image(
         question=question,
         source_frame=source_frame or SourceFrame(source_id=str(image_path)),
         prompt_revision=prompt_revision,
+        decode_mode=decode_mode,
     )
 
 
@@ -232,12 +265,13 @@ def infer_rgb(
     question: str,
     source_frame: SourceFrame,
     prompt_revision: str = PROMPT_REVISION,
+    decode_mode: DecodeMode | None = None,
 ) -> tuple[VLMInferenceRecord, float]:
     """Generate from one already-decoded RGB frame and retain its source hash."""
     if rgb.mode != "RGB":
         raise ValueError("infer_rgb requires an RGB image")
     started = time.perf_counter()
-    raw_generation = backend.generate(rgb, question)
+    raw_generation = backend.generate(rgb, question, decode_mode=decode_mode)
     latency_ms = (time.perf_counter() - started) * 1000
     try:
         response = parse_vlm_response(raw_generation)

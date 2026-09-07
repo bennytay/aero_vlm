@@ -2,9 +2,26 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, Literal
 
 PROMPT_REVISION: Final = "vlm-spike-v4"
+
+ResponseKind = Literal["caption", "answer", "point"]
+
+
+def response_kind_for(question: str) -> ResponseKind:
+    """Classify which response contract a question is routed to.
+
+    Shared between the prompt template below and the constrained-decoding
+    schema selection, so both stay in sync on what a question expects.
+    """
+    normalized = question.lower().strip()
+    if normalized.startswith("describe"):
+        return "caption"
+    if normalized.startswith("point to"):
+        return "point"
+    return "answer"
+
 
 SYSTEM_PROMPT: Final = (
     "Use only this image. Reply with exactly one JSON object and no Markdown. "
@@ -18,7 +35,8 @@ SYSTEM_PROMPT: Final = (
 def render_prompt(question: str) -> str:
     """Use the smallest strict response template compatible with the question."""
     normalized = question.lower().strip()
-    if normalized.startswith("describe"):
+    kind = response_kind_for(question)
+    if kind == "caption":
         template = (
             'If you can describe the scene: {"type":"caption","status":"ok",'
             '"text":"<one sentence>"}. Only if the image itself is blank, '

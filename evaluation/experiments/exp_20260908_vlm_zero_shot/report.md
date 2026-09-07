@@ -136,16 +136,78 @@ The remaining 7 failures on `vlm-spike-v4` split into two kinds:
   v5 experiment above is evidence further prompt-only iteration here has
   turned risky rather than productive.
 
+## Automatic schema-constrained fallback and a `lm-format-enforcer` bug (2026-09-08)
+
+`point_ambiguous_01`'s missing-keys slip turned out to be fully
+deterministic — identical `{"x":509,"y":758}` coordinates across repeated
+runs and even after reinforcing "always include all four point keys" in the
+prompt. Retrying it under schema-constrained decoding (`--decode-mode
+schema`, already in the codebase as a documented "correctness reference")
+was expected to force valid structure, but it produced the exact same
+missing-field output. That result is diagnosed, not just observed: probing
+`lmformatenforcer.JsonSchemaParser` character-by-character shows that
+constraining against `PointResponse` alone correctly *rejects* closing the
+`point` object before `semantics` is supplied, but constraining against the
+top-level discriminated union `CaptionResponse | AnswerResponse |
+PointResponse` (`VLMResponseContract`, used by the existing
+`_schema_prefix_allowed_tokens`) incorrectly *allows* it. The installed
+`lm-format-enforcer` (pinned `>=0.11,<1`) does not correctly propagate
+nested `required` constraints through a `oneOf`/discriminator composition,
+even though the emitted JSON Schema itself is correct. Patching or
+upgrading that pinned third-party dependency is out of scope here.
+
+The in-scope fix: `render_prompt` already knows which single response type
+(`caption`/`answer`/`point`) a question maps to (now factored out as
+`response_kind_for` in `src/wam_drones/vlm/prompts.py`, shared by both the
+prompt template and schema selection). `TransformersVLMBackend
+._schema_prefix_allowed_tokens` (`src/wam_drones/vlm/inference.py`) now
+constrains against that single response type's schema instead of the full
+union, sidestepping the union-composition bug entirely — confirmed
+directly: the same case that returned malformed JSON under the full-union
+schema returns a fully valid response under the narrowed one.
+
+`wam-vlm smoke` (`run_smoke` in `src/wam_drones/vlm/cli.py`) now uses this
+automatically: any case that fails unconstrained parsing is retried once
+with schema-constrained decoding (only when the model config declares
+`supports_schema_constrained_decoding`), and the metrics record a new
+`schema_fallback_successes` count for transparency. `generate()`,
+`infer_rgb()`, and `infer_image()` all gained an optional `decode_mode`
+override to support the per-case retry without constructing a second model
+instance.
+
+Re-running the full 17-frame pack
+(`qwen3_vl_2b_v4_narrowfallback_dedup17_smoke_candidates`) with this in
+place: **parse success reached 17/17 (100%)** — `schema_fallback_successes:
+1`, exactly the one case it was built for. `type`/`status` match held at
+10/17 (58.8%), which is expected: the fallback only fixes structural
+validity, not the model's status choice, so `point_ambiguous_01` moved from
+a parse failure to a clean semantic mismatch (`found` instead of
+`ambiguous`) rather than becoming correct. **Every one of the 7 remaining
+failures is now a structurally valid response with the wrong `status`** —
+there are no parse failures, no missing fields, and no hallucinated
+out-of-schema values left in the pack. The gap that remains is entirely the
+model choosing the wrong one of several valid-looking abstention statuses
+(or failing to recognize an unambiguous target/an obscured reference), which
+is what the `vlm-spike-v5` negative result above already showed does not
+respond well to further zero-shot prompt rewrites.
+
 ## Next work
 
 1. Replace the provisional type/status-only smoke checks with task-aware
    semantic scoring for reviewed responses.
 2. Close the remaining status-discrimination gap via few-shot exemplars in
    the prompt or light aerial SFT, not further zero-shot prompt rewrites —
-   see the `vlm-spike-v5` negative result above.
-3. Use Qwen3-VL-2B as the only local candidate for the next iteration; retain
-   schema-constrained decoding only as a measured reference (44.94 s/case is
-   not viable live, but it's useful for isolating format failures from
-   reasoning failures on the same inputs). SmolVLM2 is dropped from further
-   local-candidate consideration — it returns plain text despite a
+   see the `vlm-spike-v5` negative result above. This is the only
+   remaining gap in the spike; every parsing/schema/data-quality issue found
+   during this investigation is now fixed and verified at 17/17.
+3. Consider reporting the `lm-format-enforcer` discriminated-union
+   `required`-field gap upstream, or revisit once the pinned version range
+   (`>=0.11,<1`) moves — the per-type-schema workaround in
+   `_schema_prefix_allowed_tokens` is a durable fix either way and should
+   stay regardless.
+4. Use Qwen3-VL-2B as the only local candidate for the next iteration; retain
+   schema-constrained decoding as the automatic fallback for parse failures
+   (now default in `wam-vlm smoke`) but not as the primary live decode path —
+   individual fallback calls still take up to ~30s. SmolVLM2 is dropped from
+   further local-candidate consideration — it returns plain text despite a
    strict-JSON instruction and fails the output-contract gate outright.

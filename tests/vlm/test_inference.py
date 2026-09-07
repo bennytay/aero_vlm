@@ -15,7 +15,9 @@ class FakeBackend:
     def __init__(self, output: str) -> None:
         self.output = output
 
-    def generate(self, rgb: object, question: str) -> str:
+    def generate(
+        self, rgb: object, question: str, *, decode_mode: str | None = None
+    ) -> str:
         assert question == "How many cars are visible?"
         return self.output
 

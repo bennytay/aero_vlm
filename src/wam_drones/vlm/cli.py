@@ -43,7 +43,11 @@ def _reset_peak_memory() -> None:
 
 
 def _write_run(
-    output_dir: Path, records: list[tuple[Any, float]], *, semantic_failures: int = 0
+    output_dir: Path,
+    records: list[tuple[Any, float]],
+    *,
+    semantic_failures: int = 0,
+    schema_fallback_successes: int = 0,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "audit.jsonl").write_text(
@@ -58,6 +62,7 @@ def _write_run(
         "parse_successes": successful,
         "parse_success_rate": successful / len(records) if records else None,
         "semantic_failures": semantic_failures,
+        "schema_fallback_successes": schema_fallback_successes,
         "mean_latency_ms": sum(latencies) / len(latencies) if latencies else None,
         "max_latency_ms": max(latencies, default=None),
         "peak_memory_bytes": _peak_memory_bytes(),
@@ -150,13 +155,31 @@ def run_smoke(args: argparse.Namespace, config: VLMModelConfig) -> int:
     )
     records: list[tuple[Any, float]] = []
     semantic_failures = 0
+    schema_fallback_successes = 0
+    can_fall_back = (
+        args.decode_mode == "unconstrained"
+        and config.supports_schema_constrained_decoding
+    )
     for case in cases:
         if not isinstance(case, dict):
             raise ValueError("smoke suite cases must be objects")
         image = args.images_dir / str(case["image"])
+        question = str(case["question"])
         record, latency = infer_image(
-            image, backend, str(case["question"]), prompt_revision=args.prompt_revision
+            image, backend, question, prompt_revision=args.prompt_revision
         )
+        if record.response is None and can_fall_back:
+            fallback_record, fallback_latency = infer_image(
+                image,
+                backend,
+                question,
+                prompt_revision=args.prompt_revision,
+                decode_mode="schema",
+            )
+            latency += fallback_latency
+            if fallback_record.response is not None:
+                record = fallback_record
+                schema_fallback_successes += 1
         records.append((record, latency))
         if (
             record.response is None
@@ -164,7 +187,12 @@ def run_smoke(args: argparse.Namespace, config: VLMModelConfig) -> int:
             or record.response.status != case["expected_status"]
         ):
             semantic_failures += 1
-    _write_run(args.output_dir, records, semantic_failures=semantic_failures)
+    _write_run(
+        args.output_dir,
+        records,
+        semantic_failures=semantic_failures,
+        schema_fallback_successes=schema_fallback_successes,
+    )
     print(args.output_dir / "metrics.json")
     return 0
 

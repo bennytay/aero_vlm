@@ -1,8 +1,4 @@
-"""Offline VLM supervision helpers.
-
-The VLM runtime is added in later phases.  This package currently contains
-only the read-only tracking teacher boundary established in Step 0.
-"""
+"""Strict VLM contracts, teacher boundaries, and image-only inference."""
 
 from wam_drones.vlm.contracts import (
     AnswerResponse,
@@ -13,6 +9,8 @@ from wam_drones.vlm.contracts import (
     VLMSupervisionRecord,
     parse_vlm_response,
 )
+from wam_drones.vlm.inference import TransformersVLMBackend, VLMBackend, infer_image
+from wam_drones.vlm.model_config import VLMModelConfig, load_model_config
 from wam_drones.vlm.teacher import (
     FrameProvenance,
     TeacherArtifact,
@@ -29,9 +27,14 @@ __all__ = [
     "PointResponse",
     "TeacherArtifact",
     "TeacherRunMetadata",
+    "TransformersVLMBackend",
+    "VLMBackend",
     "VLMInferenceRecord",
+    "VLMModelConfig",
     "VLMResponseContract",
     "VLMSupervisionRecord",
+    "infer_image",
+    "load_model_config",
     "load_teacher_artifact",
     "parse_vlm_response",
     "validate_teacher_artifact",

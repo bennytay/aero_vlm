@@ -29,10 +29,17 @@ detection = [
 dataset = [
   "pillow>=10,<12",
 ]
+vlm-inference = [
+  "pillow>=10,<12",
+  "transformers>=5.12.1,<6",
+  "accelerate>=1.0,<2",
+  "lm-format-enforcer>=0.11,<1",
+]
 
 [project.scripts]
 wam-detect = "wam_drones.detection.cli:main"
 wam-dataset = "wam_drones.dataset.cli:main"
+wam-vlm = "wam_drones.vlm.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/wam_drones"]

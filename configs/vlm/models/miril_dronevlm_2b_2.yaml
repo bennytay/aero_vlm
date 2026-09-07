@@ -1,0 +1,10 @@
+name: miril-dronevlm-2b-2
+repository: MirilAI/Miril-DroneVLM-2B-2
+revision: 59df619427cfdb022e06d2851d76d9668b5fa63e
+architecture: gemma4
+license: apache-2.0
+max_new_tokens: 256
+do_sample: false
+temperature: 0.0
+image_max_pixels: 1003520
+supports_schema_constrained_decoding: false

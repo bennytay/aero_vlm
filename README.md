@@ -43,6 +43,30 @@ and accelerator dependencies will be optional.
 
 ## Current status
 
+The VLM work has entered its image-only pretrained-model spike. It keeps the
+runtime separate from detector and tracker code, emits a strict audit JSONL for
+each image or sampled video frame, and supports deterministic unconstrained and
+compatible schema-constrained decoding. Install its optional dependencies and
+run a single image (or provide a video, which is sampled as independent RGB
+frames):
+
+```shell
+uv sync --group vlm-inference
+uv run wam-vlm infer path/to/image.jpg --question "How many cars are visible?"
+uv run wam-vlm --model-config configs/vlm/models/miril_dronevlm_2b_2.yaml \
+  infer path/to/video.mp4 --question "Describe this scene." --sample-every 30
+```
+
+The checked-in 36-case smoke-suite manifest at
+[`configs/vlm/smoke_suite_v1.json`](configs/vlm/smoke_suite_v1.json) specifies
+captions, counts, presence, pointing, absent, ambiguous, unknown, and
+low-visibility cases. It intentionally contains source image names only, so
+the reviewed fixture set stays outside version control:
+
+```shell
+uv run wam-vlm smoke --images-dir path/to/reviewed-vlm-smoke-images
+```
+
 Phase 0 is complete. It provides:
 
 - the frozen [`vocabulary_detection_v1.yaml`](configs/vocabulary_detection_v1.yaml);

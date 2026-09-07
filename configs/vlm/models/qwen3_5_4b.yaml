@@ -1,0 +1,10 @@
+name: qwen3.5-4b
+repository: Qwen/Qwen3.5-4B
+revision: 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a
+architecture: qwen3_5
+license: apache-2.0
+max_new_tokens: 256
+do_sample: false
+temperature: 0.0
+image_max_pixels: 1003520
+supports_schema_constrained_decoding: false

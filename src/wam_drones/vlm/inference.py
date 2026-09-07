@@ -111,7 +111,6 @@ class TransformersVLMBackend:
 
     def _inputs(self, rgb: Image, question: str) -> Any:
         messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
                 "content": [
@@ -120,7 +119,10 @@ class TransformersVLMBackend:
                         "image": rgb,
                         "max_pixels": self.config.image_max_pixels,
                     },
-                    {"type": "text", "text": question},
+                    {
+                        "type": "text",
+                        "text": f"{SYSTEM_PROMPT}\n\nUser question: {question}",
+                    },
                 ],
             },
         ]
@@ -135,6 +137,16 @@ class TransformersVLMBackend:
         )
         device = getattr(self.model, "device", None)
         return inputs.to(device) if device is not None else inputs
+
+    def _bounded_rgb(self, rgb: Image) -> Image:
+        """Bound source pixels even when a model processor ignores its budget."""
+        width, height = rgb.size
+        pixels = width * height
+        if pixels <= self.config.image_max_pixels:
+            return rgb
+        scale = (self.config.image_max_pixels / pixels) ** 0.5
+        resized = (max(1, round(width * scale)), max(1, round(height * scale)))
+        return rgb.resize(resized)
 
     def _schema_prefix_allowed_tokens(self) -> Any:
         """Build optional strict JSON token filtering for compatible models."""
@@ -154,7 +166,8 @@ class TransformersVLMBackend:
     def generate(self, rgb: Image, question: str) -> str:
         if rgb.mode != "RGB":
             raise ValueError("VLMBackend requires an RGB image")
-        inputs = self._inputs(rgb, question)
+        processed_rgb = self._bounded_rgb(rgb)
+        inputs = self._inputs(processed_rgb, question)
         image_grid = inputs.get("image_grid_thw")
         image_processor = getattr(self.processor, "image_processor", None)
         patch_size = getattr(image_processor, "patch_size", None)
@@ -168,7 +181,7 @@ class TransformersVLMBackend:
                 int(grid[1]) * patch_size,
             )
         else:
-            self._last_dimensions = rgb.size
+            self._last_dimensions = processed_rgb.size
         options: dict[str, Any] = {
             "max_new_tokens": self.config.max_new_tokens,
             "do_sample": self.config.do_sample,

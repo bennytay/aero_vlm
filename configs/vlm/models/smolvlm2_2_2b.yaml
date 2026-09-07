@@ -3,8 +3,8 @@ repository: HuggingFaceTB/SmolVLM2-2.2B-Instruct
 revision: 482adb537c021c86670beed01cd58990d01e72e4
 architecture: smolvlm2
 license: apache-2.0
-max_new_tokens: 256
+max_new_tokens: 64
 do_sample: false
 temperature: 0.0
-image_max_pixels: 1003520
+image_max_pixels: 112896
 supports_schema_constrained_decoding: false

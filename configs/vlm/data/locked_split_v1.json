@@ -1,0 +1,17 @@
+{
+  "schema_version": "vlm_locked_split_v1",
+  "dataset": "VisDrone2019-MOT official validation split",
+  "source": "evaluation/experiments/exp_20260831_phase4_tracking/meta.json",
+  "development_sequences": [
+    "uav0000086_00000_v",
+    "uav0000117_02622_v",
+    "uav0000137_00458_v"
+  ],
+  "held_out_sequences": [
+    "uav0000182_00000_v",
+    "uav0000268_05773_v",
+    "uav0000305_00000_v",
+    "uav0000339_00001_v"
+  ],
+  "note": "Preserved from the Phase 4 tracking split (vlm_implementation_plan.md Step 3.1, MVP scope). held_out_sequences are reserved for final VLM evaluation only -- never sample them for VLM training, smoke-suite, or prompt-authoring frames."
+}

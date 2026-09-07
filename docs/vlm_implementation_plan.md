@@ -212,22 +212,59 @@ examples.
 
 ### Step 3 — lock splits and the evaluation set
 
+**MVP scope decision (2026-09-08):** priority shifted to getting the product
+to exist before investing in a research-grade evaluation suite. Items 1 and
+8 (the sequence-boundary lock and a leakage guard) were implemented now,
+scoped down from a full automated report to a single checked-in split file
+plus a guard function future data-factory code must call. Items 2–7 (MOT
+training/checkpoint split, DET perceptual-hash dedup, cross-dataset dedup,
+temporal sampling, and — the largest cost — authoring 300–500 human-audited
+prompts) are deferred until real VLM training data is actually being
+assembled (Step 4+), not attempted speculatively ahead of that need. The
+Step 2 smoke suite (17 cases, `configs/vlm/smoke_suite_v1.json`) remains the
+working sanity check until then.
+
+What exists now: `configs/vlm/data/locked_split_v1.json` preserves the exact
+Phase 4 tracking split (three development sequences, four held-out
+sequences) verbatim from
+`evaluation/experiments/exp_20260831_phase4_tracking/meta.json`.
+`src/wam_drones/vlm/splits.py` loads it and exposes
+`assert_no_held_out_leakage(candidate_sequence_ids)`, which any future
+sampling code (Step 4 data factory, smoke-suite expansion, etc.) must call
+before drawing frames from a sequence, so the four held-out sequences can
+never silently enter training or prompt-authoring data. `tests/vlm/test_splits.py`
+covers the loader and the guard.
+
+The full original scope below is the target once Step 4+ actually needs it —
+do not skip straight to authoring the 300–500-prompt suite without expanding
+this scope decision first.
+
 1. Preserve the Phase 4 split: reserve its four held-out MOT-val sequences for
    final VLM testing and keep its three development sequences as diagnostics.
+   — **done at MVP scope**, see above.
 2. Split complete MOT-train sequences into VLM training and checkpoint
-   development groups.
+   development groups. — deferred.
 3. Group DET stills by the existing scene proxy, then join perceptual-hash
-   duplicates into connected components.
+   duplicates into connected components. — deferred.
 4. Deduplicate across DET, MOT, and any external dataset before generating
-   questions.
-5. Sample temporally separated frames; cap frames per sequence.
+   questions. — deferred.
+5. Sample temporally separated frames; cap frames per sequence. — deferred.
 6. Author 300–500 human-audited prompts independently from training templates.
+   — deferred.
 7. Balance task, class, count, density, processed object size, occlusion,
-   positive, negative, ambiguous, and unknown cases.
+   positive, negative, ambiguous, and unknown cases. — deferred.
 8. Hash the suite and prompt file. Never hard-mine or tune against final test.
+   — **partially done at MVP scope**: the leakage guard exists
+   (`assert_no_held_out_leakage`); the full automated report and suite/prompt
+   hashing are deferred to when item 6 actually produces a suite to hash.
 
-Gate: an automated leakage report proves that no test sequence, source group,
-image hash, or near-duplicate occurs in train/development.
+Gate (full scope, deferred): an automated leakage report proves that no test
+sequence, source group, image hash, or near-duplicate occurs in
+train/development.
+
+Gate (MVP scope, met): `configs/vlm/data/locked_split_v1.json` is checked in,
+loads deterministically, and `assert_no_held_out_leakage` rejects any of the
+four held-out sequence IDs — verified in `tests/vlm/test_splits.py`.
 
 ### Step 4 — implement the teacher/data factory
 

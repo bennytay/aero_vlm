@@ -191,15 +191,75 @@ model choosing the wrong one of several valid-looking abstention statuses
 is what the `vlm-spike-v5` negative result above already showed does not
 respond well to further zero-shot prompt rewrites.
 
+## Worked-example prompt reinforcement (2026-09-08, `vlm-spike-v6`, `v7`)
+
+The `vlm-spike-v5` restructuring above was too broad a change to tell what
+helped or hurt. Two smaller, purely additive rounds followed instead, each
+appending one concrete worked example onto the existing `v4` criteria
+(nothing removed or restructured) and each verified against the failing
+subset before the full pack:
+
+- **v6** added one worked example per abstention decision ("asked whether a
+  kind of object is visible and at least one instance appears anywhere,
+  however small, answer ok" for booleans; the equivalent for `point`). Fixed
+  `presence_person_01` and `point_person_01`, which had been abstaining on
+  unambiguous content. No regressions.
+- **v7** added, to the `point` and generic-answer templates only: "if you
+  notice yourself about to pick just one of several equally matching
+  instances because it's closest, largest, or first-noticed, that impulse
+  itself is the signal to answer ambiguous instead." Fixed
+  `point_ambiguous_02`. No regressions.
+
+Net result on the full 17-frame pack: **type/status match rose from 58.8%
+(10/17) to 76.5% (13/17)**, parse success held at 100% throughout both
+rounds, and no previously-passing case regressed.
+
+The 4 cases still failing under `v7` (`point_absent_01`, `point_ambiguous_01`,
+`answer_ambiguous_01`, `review_region_02`) were re-audited visually to rule
+out a labeling error rather than assume a model failure: both
+`point_ambiguous_01` ("Point to the car.") and `answer_ambiguous_01` ("What
+colour is the car?") genuinely show multiple similarly-prominent cars with
+nothing in the question to disambiguate — the `ambiguous` label is correct,
+not an artifact of over-strict grading. Both produced byte-identical raw
+output before and after the `v7` addition specifically written to target
+this failure mode, which is direct evidence of a plateau on these two
+cases specifically, not insufficient wording effort.
+
+## Visual few-shot: confirmed infeasible on this GPU (2026-09-08)
+
+Since text-only reinforcement plateaued on the two stubborn `ambiguous`
+misses, a genuinely different mechanism was tried: showing the model one
+already-correctly-solved exemplar image (`point_ambiguous_02`, fixed by
+`v7`) with its correct JSON answer as a prior turn, then asking the still-
+failing question in the same multi-turn, multi-image chat. The processor's
+chat template accepted the multi-image, multi-turn structure without
+error — the mechanism itself is supported — but every attempt at the actual
+generation step hit `CUDA out of memory`, including after shrinking both
+images to a shared 250,000-pixel budget (well under the model's normal
+1,003,520-pixel single-image budget). The failure signature (exact same
+"6.74 GiB already in use" state) was identical regardless of image size,
+which pins the cause: this model config already uses ~85-90% of the 8 GB
+RTX 3070 for a *single* image (see `peak_memory_bytes` in every run above,
+consistently 6.6-6.8 GB of 8 GB total), so there is no headroom left for a
+second image's vision-encoder pass at any resolution on this card.
+Lowering the model's own `image_max_pixels` globally to make room would
+degrade the resolution — and likely the accuracy — of the 13 cases that
+now pass, so it was not attempted blind. Visual few-shot is a real option
+in principle but needs a host with more VRAM (or a smaller/quantized
+model), not further tuning on this machine.
+
 ## Next work
 
 1. Replace the provisional type/status-only smoke checks with task-aware
    semantic scoring for reviewed responses.
-2. Close the remaining status-discrimination gap via few-shot exemplars in
-   the prompt or light aerial SFT, not further zero-shot prompt rewrites —
-   see the `vlm-spike-v5` negative result above. This is the only
-   remaining gap in the spike; every parsing/schema/data-quality issue found
-   during this investigation is now fixed and verified at 17/17.
+2. The remaining 4/17 gap (`point_absent_01`, `point_ambiguous_01`,
+   `answer_ambiguous_01`, `review_region_02`) needs either light aerial SFT,
+   or visual few-shot exemplars on a host with more GPU memory — both are
+   data/infrastructure decisions, not further prompt-only iteration on this
+   machine (see the `v5` and visual-few-shot sections above for why further
+   zero-shot prompt rewrites here have low expected value). Every
+   parsing/schema/data-quality issue found during this investigation is
+   fixed and verified at 17/17; this is the only remaining gap.
 3. Consider reporting the `lm-format-enforcer` discriminated-union
    `required`-field gap upstream, or revisit once the pinned version range
    (`>=0.11,<1`) moves — the per-type-schema workaround in

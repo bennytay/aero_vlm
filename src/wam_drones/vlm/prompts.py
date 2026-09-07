@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Final, Literal
 
-PROMPT_REVISION: Final = "vlm-spike-v4"
+PROMPT_REVISION: Final = "vlm-spike-v7"
 
 ResponseKind = Literal["caption", "answer", "point"]
 
@@ -62,7 +62,11 @@ def render_prompt(question: str) -> str:
             '"not_visible","answer":null}. Only if it is genuinely unclear '
             'either way: {"type":"answer","status":"ambiguous","answer":null}. '
             'Only if the question does not apply to this image: '
-            '{"type":"answer","status":"unknown","answer":null}.'
+            '{"type":"answer","status":"unknown","answer":null}. For example: '
+            "asked whether a kind of object is visible and at least one clear "
+            'instance of it appears anywhere in the frame, however small or '
+            'distant, answer "ok" with value true — do not abstain just '
+            "because it is not the main subject of the photo."
         )
     elif normalized.startswith("point to"):
         semantics = "review_region" if "review" in normalized else "target_center"
@@ -82,7 +86,19 @@ def render_prompt(question: str) -> str:
             'hidden or out of frame. Only use {"type":"point","status":'
             '"unknown","point":null} when the question itself cannot be '
             "evaluated from this image. Whenever status is not \"found\", "
-            "point must be the JSON literal null, never coordinates."
+            "point must be the JSON literal null, never coordinates. For "
+            'example: asked to point to something and exactly one instance '
+            'of it appears anywhere, however small or off-centre, respond '
+            '"found" with its coordinates — do not abstain just because it '
+            "is not the main subject of the photo. Asked to point to "
+            "something and searching the whole image turns up none of it "
+            'at all, respond "no_candidate". Asked to point to something '
+            "generic (like \"the car\") with two or more equally matching "
+            'instances and nothing in the question picks one out, respond '
+            '"ambiguous" — if you notice yourself about to point at just '
+            "one of several equally matching instances because it is "
+            "closest, largest, or first-noticed, that impulse itself is "
+            "the signal to answer \"ambiguous\" instead."
         )
     else:
         template = (
@@ -93,6 +109,13 @@ def render_prompt(question: str) -> str:
             'answers exist and you cannot pick one: {"type":"answer",'
             '"status":"ambiguous","answer":null}. Only if the question does '
             'not apply to this image: {"type":"answer","status":"unknown",'
-            '"answer":null}.'
+            '"answer":null}. For example: asked a question that names an '
+            'object generically (like "the car") using "the", with two or '
+            "more equally matching instances and nothing in the question "
+            'picking one out, respond "ambiguous" rather than guessing '
+            "which one was meant — if you notice yourself about to answer "
+            "based on just one of several equally matching instances "
+            "because it is closest, largest, or first-noticed, that "
+            'impulse itself is the signal to answer "ambiguous" instead.'
         )
     return f"{SYSTEM_PROMPT}Required form: {template}\nUser question: {question}"

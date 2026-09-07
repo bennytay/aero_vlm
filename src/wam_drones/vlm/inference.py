@@ -25,6 +25,7 @@ from wam_drones.vlm.contracts import (
     parse_vlm_response,
 )
 from wam_drones.vlm.model_config import VLMModelConfig
+from wam_drones.vlm.prompts import PROMPT_REVISION, SYSTEM_PROMPT
 
 if TYPE_CHECKING:
     from PIL.Image import Image
@@ -110,6 +111,7 @@ class TransformersVLMBackend:
 
     def _inputs(self, rgb: Image, question: str) -> Any:
         messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
                 "content": [
@@ -120,7 +122,7 @@ class TransformersVLMBackend:
                     },
                     {"type": "text", "text": question},
                 ],
-            }
+            },
         ]
         prompt = self.processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
@@ -175,7 +177,7 @@ def infer_image(
     question: str,
     *,
     source_frame: SourceFrame | None = None,
-    prompt_revision: str = "vlm-spike-v1",
+    prompt_revision: str = PROMPT_REVISION,
 ) -> tuple[VLMInferenceRecord, float]:
     """Generate once, preserving malformed model output as a failed audit row."""
     try:
@@ -203,7 +205,7 @@ def infer_rgb(
     backend: VLMBackend,
     question: str,
     source_frame: SourceFrame,
-    prompt_revision: str = "vlm-spike-v1",
+    prompt_revision: str = PROMPT_REVISION,
 ) -> tuple[VLMInferenceRecord, float]:
     """Generate from one already-decoded RGB frame and retain its source hash."""
     if rgb.mode != "RGB":

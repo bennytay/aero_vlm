@@ -13,6 +13,7 @@ from typing import Any
 from wam_drones.vlm.contracts import SourceFrame
 from wam_drones.vlm.inference import TransformersVLMBackend, infer_image, infer_rgb
 from wam_drones.vlm.model_config import VLMModelConfig, load_model_config
+from wam_drones.vlm.prompts import PROMPT_REVISION
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
@@ -186,7 +187,7 @@ def build_parser() -> argparse.ArgumentParser:
     infer.add_argument(
         "--decode-mode", choices=("unconstrained", "schema"), default="unconstrained"
     )
-    infer.add_argument("--prompt-revision", default="vlm-spike-v1")
+    infer.add_argument("--prompt-revision", default=PROMPT_REVISION)
     infer.add_argument("--sample-every", type=int, default=30)
     infer.add_argument("--frame-limit", type=int)
     smoke = subparsers.add_parser("smoke", help="run the 36-case task-balanced suite")
@@ -201,7 +202,7 @@ def build_parser() -> argparse.ArgumentParser:
     smoke.add_argument(
         "--decode-mode", choices=("unconstrained", "schema"), default="unconstrained"
     )
-    smoke.add_argument("--prompt-revision", default="vlm-spike-v1")
+    smoke.add_argument("--prompt-revision", default=PROMPT_REVISION)
     return parser
 
 

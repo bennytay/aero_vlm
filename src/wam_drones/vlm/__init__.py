@@ -11,6 +11,7 @@ from wam_drones.vlm.contracts import (
 )
 from wam_drones.vlm.inference import TransformersVLMBackend, VLMBackend, infer_image
 from wam_drones.vlm.model_config import VLMModelConfig, load_model_config
+from wam_drones.vlm.prompts import PROMPT_REVISION, SYSTEM_PROMPT
 from wam_drones.vlm.teacher import (
     FrameProvenance,
     TeacherArtifact,
@@ -21,6 +22,8 @@ from wam_drones.vlm.teacher import (
 )
 
 __all__ = [
+    "PROMPT_REVISION",
+    "SYSTEM_PROMPT",
     "AnswerResponse",
     "CaptionResponse",
     "FrameProvenance",

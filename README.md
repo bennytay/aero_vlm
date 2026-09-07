@@ -43,17 +43,25 @@ and accelerator dependencies will be optional.
 
 ## Current status
 
-The VLM work has entered its image-only pretrained-model spike. It keeps the
-runtime separate from detector and tracker code, emits a strict audit JSONL for
-each image or sampled video frame, and supports deterministic unconstrained and
-compatible schema-constrained decoding. Install its optional dependencies and
-run a single image (or provide a video, which is sampled as independent RGB
-frames):
+The VLM work has entered its image-only pretrained-model spike. Its goal is an
+efficient aerial VLM: the primary local candidates are Qwen3-VL-2B and
+SmolVLM2-2.2B, while larger Qwen and Miril models are optional quality
+references. The runtime is separate from detector and tracker code and emits a
+strict audit JSONL for every frame.
+
+The same `VLMBackend.generate(rgb, question)` call can run live when a camera
+loop supplies its latest decoded RGB frame. It has no temporal input and does
+not wait for or inspect future frames. `wam-vlm infer VIDEO` is an offline
+benchmark tool that samples independent frames through that identical path;
+it is not a live camera-capture command.
+
+Install the optional dependencies and run a single image (or provide a video,
+which is sampled as independent RGB frames):
 
 ```shell
 uv sync --group vlm-inference
 uv run wam-vlm infer path/to/image.jpg --question "How many cars are visible?"
-uv run wam-vlm --model-config configs/vlm/models/miril_dronevlm_2b_2.yaml \
+uv run wam-vlm --model-config configs/vlm/models/qwen3_vl_2b.yaml \
   infer path/to/video.mp4 --question "Describe this scene." --sample-every 30
 ```
 

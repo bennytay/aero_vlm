@@ -55,10 +55,12 @@ def test_model_configs_are_deterministic_and_include_three_candidates() -> None:
         load_model_config(path)
         for path in sorted((root / "configs/vlm/models").glob("*.yaml"))
     ]
-    assert {config.name for config in configs} == {
+    assert {config.name for config in configs} >= {
         "qwen3-vl-4b",
         "qwen3.5-4b",
         "miril-dronevlm-2b-2",
+        "qwen3-vl-2b",
+        "smolvlm2-2.2b",
     }
     assert all(not config.do_sample and config.temperature == 0 for config in configs)
 

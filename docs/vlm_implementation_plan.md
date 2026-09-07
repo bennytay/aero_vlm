@@ -5,6 +5,12 @@
 **Companion research:** [`vlm_research_brief.md`](vlm_research_brief.md)
 **Runtime boundary:** one RGB frame plus text in; validated structured response out
 
+The runtime can serve a live camera loop: submit the most recently decoded RGB
+frame and a question, then consume its validated response before submitting a
+later frame. It has no temporal state or future-frame access. The sampled-video
+CLI is an offline measurement harness for this same single-frame interface; it
+does not make the VLM retrospective or video-native.
+
 ## Repository decision
 
 Keep detection, tracking, and the VLM in this repository for the research phase.
@@ -186,7 +192,10 @@ and malformed generations remain failures rather than being silently repaired.
 
 1. Define a small `VLMBackend` protocol with `generate(rgb, question)`.
 2. Implement the Transformers backend without importing detector code.
-3. Add model configs for Qwen3-VL-4B, Qwen3.5-4B, and Miril-DroneVLM-2B-2.
+3. Make Qwen3-VL-2B and SmolVLM2-2.2B the primary local candidates. Keep
+   Qwen3-VL-4B and Qwen3.5-4B as optional quality ceilings. Do not run
+   Miril-DroneVLM-2B-2 locally on the 8 GB development GPU; reserve it for a
+   separately resourced reference comparison.
 4. Fix decoding settings and record exact processor/model revisions.
 5. Support schema-constrained decoding when compatible, plus an unconstrained
    deterministic research mode for comparison.
@@ -196,9 +205,10 @@ and malformed generations remain failures rather than being silently repaired.
 8. Create a 30–50-case smoke suite spanning captions, counts, presence,
    pointing, absent targets, ambiguous targets, and low-visibility images.
 
-Gate: each model can run the same input contract and produces an audit JSONL.
-Peak memory, preprocessing resolution, latency, parse success, and semantic
-failures are recorded. Select no training base yet from showcase examples.
+Gate: each primary local model can run the same input contract and produces an
+audit JSONL. Peak memory, preprocessing resolution, latency, parse success,
+and semantic failures are recorded. Select no training base yet from showcase
+examples.
 
 ### Step 3 — lock splits and the evaluation set
 
@@ -279,14 +289,15 @@ questions are reported separately.
 
 ### Step 7 — run the zero-shot model selection
 
-1. Run the locked development suite on all three primary candidates.
+1. Run the locked development suite on both primary local candidates.
 2. Use identical image preprocessing budgets where architectures permit.
 3. Report valid/schema JSON separately from answer correctness.
 4. Measure caption hallucination, count accuracy/MAE, point-in-box and normalized
    error, abstention precision/recall, and false-point rate.
 5. Inspect failures by processed target size and density.
-6. Select the first SFT base. Default to Qwen3-VL-4B on a tie; promote
-   Qwen3.5-4B only if quality and trainer reliability are better.
+6. Select the smallest base that meets the locked-suite quality and abstention
+   thresholds. Run a larger optional candidate only when the smaller models
+   show a measured capacity ceiling.
 
 Gate: commit an experiment report and immutable config. The demo must not decide
 the winner.
@@ -317,9 +328,9 @@ Run one change at a time:
 1. frozen vision versus LoRA on the last vision blocks;
 2. 640-class versus higher-resolution image budget;
 3. GT-only versus GT plus stabilized tracker supervision;
-4. general base plus aerial SFT versus Miril warm start;
-5. Qwen3-VL-4B versus Qwen3.5-4B; and
-6. 4B versus 8B/9B only if the smaller result shows a capacity ceiling.
+4. Qwen3-VL-2B versus SmolVLM2-2.2B after aerial SFT;
+5. the selected efficient base versus an optional 4B quality ceiling; and
+6. the selected base versus Miril only on separately provisioned hardware.
 
 Use hard-example SFT next. Add DPO only from reviewed on-policy rejected/chosen
 pairs, primarily for hallucination and abstention. GRPO/GSPO remains optional.
@@ -524,7 +535,7 @@ The next implementation session should stop after Steps 0–2:
 1. validate the existing BoT-SORT output and add the frame-provenance join;
 2. implement and test `vlm_response_v1` plus the audit envelope;
 3. add the Transformers backend and `wam-vlm infer`;
-4. run three models on 30–50 fixed frames; and
+4. run the two primary local models on 30–50 fixed frames; and
 5. write the zero-shot spike report with actual memory and latency.
 
 That provides enough evidence to choose the training base and enough reusable

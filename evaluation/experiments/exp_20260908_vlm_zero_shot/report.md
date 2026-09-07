@@ -225,41 +225,63 @@ output before and after the `v7` addition specifically written to target
 this failure mode, which is direct evidence of a plateau on these two
 cases specifically, not insufficient wording effort.
 
-## Visual few-shot: confirmed infeasible on this GPU (2026-09-08)
+## Visual few-shot: memory ceiling was a real bug, model gain was not (2026-09-08)
 
 Since text-only reinforcement plateaued on the two stubborn `ambiguous`
 misses, a genuinely different mechanism was tried: showing the model one
 already-correctly-solved exemplar image (`point_ambiguous_02`, fixed by
 `v7`) with its correct JSON answer as a prior turn, then asking the still-
-failing question in the same multi-turn, multi-image chat. The processor's
-chat template accepted the multi-image, multi-turn structure without
-error — the mechanism itself is supported — but every attempt at the actual
-generation step hit `CUDA out of memory`, including after shrinking both
-images to a shared 250,000-pixel budget (well under the model's normal
-1,003,520-pixel single-image budget). The failure signature (exact same
-"6.74 GiB already in use" state) was identical regardless of image size,
-which pins the cause: this model config already uses ~85-90% of the 8 GB
-RTX 3070 for a *single* image (see `peak_memory_bytes` in every run above,
-consistently 6.6-6.8 GB of 8 GB total), so there is no headroom left for a
-second image's vision-encoder pass at any resolution on this card.
-Lowering the model's own `image_max_pixels` globally to make room would
-degrade the resolution — and likely the accuracy — of the 13 cases that
-now pass, so it was not attempted blind. Visual few-shot is a real option
-in principle but needs a host with more VRAM (or a smaller/quantized
-model), not further tuning on this machine.
+failing question (`point_ambiguous_01`) in the same multi-turn, multi-image
+chat. The first attempt hit `CUDA out of memory` even after shrinking both
+images to a shared 250,000-pixel budget, which was initially read as a
+hard VRAM ceiling for two-image inference on this 8 GB RTX 3070.
+
+That read was wrong, and re-examining it surfaced a real, separate bug:
+`VLMModelConfig` never set a `dtype`, so `from_pretrained` defaulted to
+fp32. A 2B-param model at 4 bytes/param doesn't fit an 8 GB card, so
+`device_map="auto"` was silently offloading part of it to CPU — confirmed
+by checking model parameter devices directly. That offloading, not image
+resolution, was consuming the headroom. Setting `dtype: bfloat16` in
+`configs/vlm/models/qwen3_vl_2b.yaml` (new optional field, default `None`
+so other model configs are unaffected) puts the full model on-GPU at 4.26
+GB instead of ~8 GB, and two-image inference that previously OOM'd now
+peaks around 5.3 GB. This was verified against the full 17-frame pack
+before being trusted: **identical correctness (13/17 match, 17/17 parse,
+zero regressions)** at **8x lower mean latency (11.3 s → 1.36 s)** and
+**~33% less peak memory (6.76 GB → 4.55 GB)** — a real, unconditional win
+worth keeping regardless of what the few-shot experiment found.
+
+With memory no longer a factor, the few-shot exemplar was retried twice
+(a hand-written exemplar answer, then the model's own verified-correct raw
+output for `point_ambiguous_02` used verbatim, to rule out a formatting
+mismatch). Both attempts were deterministic and both made things worse in
+a new way: `{"type":"point","status":"found","point":{"x":511,734,"y":734}}`
+— the model still committed to `found` at the same coordinates it always
+picks for this image (unchanged from every single-image run), but the
+extra multi-turn multi-image context now also corrupted the JSON syntax
+around the coordinate pair, a failure mode that never occurred in any
+single-image run. This is a direct, reproducible (2/2) negative result
+under real conditions, not a resource-limited guess: the exemplar
+mechanism itself is available and affordable now, and using it made this
+specific case regress from "wrong status, valid JSON" to "wrong status,
+invalid JSON." It was not adopted.
 
 ## Next work
 
 1. Replace the provisional type/status-only smoke checks with task-aware
    semantic scoring for reviewed responses.
 2. The remaining 4/17 gap (`point_absent_01`, `point_ambiguous_01`,
-   `answer_ambiguous_01`, `review_region_02`) needs either light aerial SFT,
-   or visual few-shot exemplars on a host with more GPU memory — both are
-   data/infrastructure decisions, not further prompt-only iteration on this
-   machine (see the `v5` and visual-few-shot sections above for why further
-   zero-shot prompt rewrites here have low expected value). Every
-   parsing/schema/data-quality issue found during this investigation is
-   fixed and verified at 17/17; this is the only remaining gap.
+   `answer_ambiguous_01`, `review_region_02`) needs light aerial SFT. Both
+   zero-shot levers available in this codebase were tried and measured, not
+   assumed: prompt-only iteration (`v5` restructuring regressed, `v6`/`v7`
+   worked-example additions helped then plateaued with byte-identical
+   output despite further targeted wording) and visual few-shot exemplars
+   (mechanically works and is affordable after the bf16 fix, but
+   reproducibly made `point_ambiguous_01` worse — same wrong status, newly
+   invalid JSON). Every parsing/schema/data-quality/memory-configuration
+   issue found during this investigation is fixed and verified at 17/17
+   parse, 13/17 semantic match; this is the only remaining gap, and it is a
+   training-data problem, not a code or prompt problem.
 3. Consider reporting the `lm-format-enforcer` discriminated-union
    `required`-field gap upstream, or revisit once the pinned version range
    (`>=0.11,<1`) moves — the per-type-schema workaround in
@@ -268,6 +290,7 @@ model), not further tuning on this machine.
 4. Use Qwen3-VL-2B as the only local candidate for the next iteration; retain
    schema-constrained decoding as the automatic fallback for parse failures
    (now default in `wam-vlm smoke`) but not as the primary live decode path —
-   individual fallback calls still take up to ~30s. SmolVLM2 is dropped from
-   further local-candidate consideration — it returns plain text despite a
+   individual fallback calls are slower than unconstrained generation (max
+   latency 4.76s on the bf16 pack, versus a 1.36s mean) even though the bf16
+   fix brought both down substantially. SmolVLM2 is dropped from
    strict-JSON instruction and fails the output-contract gate outright.

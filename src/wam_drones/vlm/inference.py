@@ -127,7 +127,12 @@ class TransformersVLMBackend:
         prompt = self.processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
-        inputs = self.processor(text=[prompt], images=[rgb], return_tensors="pt")
+        inputs = self.processor(
+            text=[prompt],
+            images=[rgb],
+            return_tensors="pt",
+            max_pixels=self.config.image_max_pixels,
+        )
         device = getattr(self.model, "device", None)
         return inputs.to(device) if device is not None else inputs
 
@@ -150,10 +155,18 @@ class TransformersVLMBackend:
         if rgb.mode != "RGB":
             raise ValueError("VLMBackend requires an RGB image")
         inputs = self._inputs(rgb, question)
-        pixel_values = inputs.get("pixel_values")
-        if pixel_values is not None and hasattr(pixel_values, "shape"):
-            shape = pixel_values.shape
-            self._last_dimensions = (int(shape[-1]), int(shape[-2]))
+        image_grid = inputs.get("image_grid_thw")
+        image_processor = getattr(self.processor, "image_processor", None)
+        patch_size = getattr(image_processor, "patch_size", None)
+        if image_grid is not None and isinstance(patch_size, int):
+            # Qwen-style processors flatten patches in pixel_values. Its last
+            # dimensions are feature width and patch count, not image width
+            # and height, so use the explicit temporal-height-width grid.
+            grid = image_grid[0].tolist()
+            self._last_dimensions = (
+                int(grid[2]) * patch_size,
+                int(grid[1]) * patch_size,
+            )
         else:
             self._last_dimensions = rgb.size
         options: dict[str, Any] = {

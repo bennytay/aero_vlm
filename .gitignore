@@ -15,6 +15,9 @@ data/processed/
 data/downloads/
 data/samples/*
 !data/samples/.gitkeep
+!data/samples/vlm_demo/
+!data/samples/vlm_demo/README.md
+!data/samples/vlm_demo/source_manifest.json
 /runs/
 /models/
 
